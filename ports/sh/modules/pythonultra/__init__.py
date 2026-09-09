@@ -215,6 +215,69 @@ def catalog_insert_ui(dark=False):
     return catalog_text(*selection) if selection is not None else None
 
 
+def information_panel(title, lines, dark=False):
+    """Show read-only reference text in the established framed modal style."""
+    if not dark:
+        return popup(title, lines, False)
+
+    import gint
+    try:
+        gint.dfont_builtin("small")
+        return _information_panel(gint, title, lines)
+    finally:
+        gint.dfont(None)
+
+
+def _information_panel(gint, title, lines):
+    """Draw a dark, scrollable information panel without changing menu popups."""
+    lines = tuple(str(line) for line in lines)
+    if not lines:
+        return None
+    accent = menu_border()
+    brightness = ((accent >> 11) & 31) * 2 + ((accent >> 5) & 63) * 3 + (accent & 31)
+    title_color = 0x0000 if brightness >= 140 else 0xFFFF
+    panel_x, panel_right = 24, 372
+    panel_top, panel_bottom = 31, 211
+    text_x, text_top, row_h = panel_x + 13, panel_top + 14, 15
+    max_visible = (panel_bottom - text_top - 8) // row_h
+    scroll = 0
+    title_text = str(title)
+    gint.clearevents()
+    while True:
+        # Keep the black body and offset frame used by the hardware-style UI.
+        gint.drect(panel_x + 5, panel_top + 5, panel_right + 5, panel_bottom + 5, 0x2104)
+        gint.drect_border(panel_x, panel_top, panel_right, panel_bottom, accent, 2, 0x0000)
+        tab_x = panel_x + 14
+        tab_right = min(panel_right - 12, tab_x + max(94, min(238, 26 + len(title_text) * 8)))
+        gint.drect_border(tab_x, panel_top - 16, tab_right, panel_top + 1, accent, 2, 0x0000)
+        gint.dtext(tab_x + 8, panel_top - 13, title_color,
+                   _popup_text(gint, title_text, tab_right - tab_x - 16))
+
+        for row in range(max_visible):
+            index = scroll + row
+            if index >= len(lines):
+                break
+            gint.dtext(text_x, text_top + row * row_h, 0xFFFF,
+                       _popup_text(gint, lines[index], panel_right - text_x - 12))
+        if scroll > 0:
+            gint.dtext(panel_right - 19, panel_top + 5, accent, "^")
+        if scroll + max_visible < len(lines):
+            gint.dtext(panel_right - 19, panel_bottom - 14, accent, "v")
+
+        gint.dupdate()
+        key = _popup_key(gint)
+        if key in (gint.KEY_EXIT, gint.KEY_LEFT, gint.KEY_RIGHT, gint.KEY_EXE):
+            return None
+        if key == gint.KEY_UP:
+            scroll = max(0, scroll - 1)
+        elif key == gint.KEY_DOWN:
+            scroll = min(max(0, len(lines) - max_visible), scroll + 1)
+        elif key == gint.KEY_ADD:
+            scroll = min(max(0, len(lines) - max_visible), scroll + max_visible)
+        elif key == gint.KEY_SUB:
+            scroll = max(0, scroll - max_visible)
+
+
 def info_lines():
     return (
         "PythonUltra for Casio fx-CG50",
@@ -234,4 +297,4 @@ def info_lines():
 
 
 def info_ui(dark=False):
-    return popup("PythonUltra Info", info_lines(), dark)
+    return information_panel("PythonUltra Info", info_lines(), dark)

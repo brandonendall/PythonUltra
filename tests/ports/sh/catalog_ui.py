@@ -78,6 +78,15 @@ assert ui.popup("Cancel", ("first",)) is None
 g.keys = [g.KEY_2]
 assert ui.popup("Number select", ("first", "second")) == "second"
 
+# Dark information pages use their own readable, scrollable framed treatment;
+# Catalog/editor popups above retain their existing behavior.
+g.frames.clear()
+g.text.clear()
+g.keys = [g.KEY_DOWN, g.KEY_EXE]
+assert ui.information_panel("PythonUltra Info", tuple("line" + str(i) for i in range(16)), True) is None
+assert g.frames[0][4] == 0xF800
+assert any(text == "line10" for _, _, _, text in g.text)
+
 # This test runs after the build patches. The F3 path must insert into the
 # existing edit line, without clearing it or evaluating the selected name.
 main = (ROOT / "ports/sh/main.c").read_text(encoding="utf-8")
