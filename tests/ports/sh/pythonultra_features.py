@@ -126,7 +126,11 @@ assert 'value in ("files", "terminal")' in pyterm
 assert "create_new" in pyfiles and "rename_selected" in pyfiles and "delete_selected" in pyfiles
 assert "permission_menu" in pyfiles and "pyperm.require_write" in pyfiles
 assert "compress_selected" in pyfiles and "extract_selected" in pyfiles
-assert 'result == "run"' not in pyfiles
+# UI4 intentionally propagates the editor's Run result into a terminal handoff
+# so script output is visible immediately, while avoiding a second execution.
+assert 'result = self.pyeditor.open_file(path, self.theme_name)' in pyfiles
+assert 'if result == "run":' in pyfiles
+assert 'return "terminal"' in pyfiles
 assert "GitHub Dark" in pyeditor and "GitHub Light" in pyeditor and "Linux" in pyeditor
 assert "pyperm.require_write" in pyeditor
 assert "_cleanup(created_files, created_folders)" in pyzip

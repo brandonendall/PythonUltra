@@ -17,12 +17,20 @@ $(JETBRAINS_FONTS) &: prepare_jetbrains_mono.py JetBrainsMono-OFL.txt
 .PHONY: pythonultra-runtime-fixes
 pythonultra-runtime-fixes:
 ifneq ($(PYTHONULTRA_RUNTIME_PREPARED),1)
+	python3 ../sh/fetch_picoc.py
 	python3 ../sh/apply_runtime_fixes.py
 	python3 ../sh/apply_pythonultra_features.py
 	python3 ../sh/apply_pythonultra_ui2.py
 	python3 ../sh/apply_pythonultra_permissions.py
 	python3 ../sh/apply_pythonultra_ui3_compat.py
 	python3 ../sh/apply_pythonultra_symbols.py
+	python3 ../sh/apply_pythonultra_symbol_safety.py
+	python3 ../sh/apply_pythonultra_editor_nav.py
+	python3 ../sh/apply_pythonultra_editor_nav_docs.py
+	python3 ../sh/apply_pythonultra_ui4.py
+	python3 ../sh/apply_pythonultra_info_menu.py
+	python3 ../sh/apply_pythonultra_cfiles.py
+	python3 ../sh/apply_pythonultra_execution_docs.py
 	python3 ../../tools/pythonultra_docs.py --output ../../build-module-docs/reference --runtime-header ../sh/module_docs.h
 endif
 	python3 -m py_compile \
@@ -37,13 +45,20 @@ endif
 	python3 ../../tests/ports/sh/pygame_colorkey.py
 	python3 ../../tests/ports/sh/numpy_compat.py
 	python3 ../../tests/ports/sh/py3d_compat.py
+	python3 ../../tests/ports/sh/update_pyeditor_regression_nav.py
 	python3 ../../tests/ports/sh/pyeditor_regression.py
+	python3 ../../tests/ports/sh/pyeditor_navigation.py
+	python3 ../../tests/ports/sh/ui4_regression.py
+	python3 ../../tests/ports/sh/editor_symbol_safety.py
 	python3 ../../tests/ports/sh/zipfile_roundtrip.py
 	python3 ../../tests/ports/sh/pyterm_startup.py
 	python3 ../../tests/ports/sh/fdfile_seek.py
 	python3 ../../tests/ports/sh/catalog_ui.py
 	python3 ../../tests/ports/sh/file_info_timestamp.py
 	python3 ../../tests/ports/sh/pythonultra_features.py
+	python3 ../../tests/ports/sh/cfile_execution.py
+	python3 ../../tests/ports/sh/picoc_integer_results.py
+	python3 ../../tests/ports/sh/picoc_smoke_host.py
 
 # The frozen Python modules must be patched and tested before firmware.bin is generated.
 $(BUILD)/firmware.bin: pythonultra-runtime-fixes
@@ -51,7 +66,7 @@ $(BUILD)/firmware.bin: pythonultra-runtime-fixes
 all: PythonUltra.g3a
 
 ICONS_RELEASE := --icon-uns=icon-uns.png --icon-sel=icon-sel.png
-ICONS_DEV := --icon-uns=icon-uns-dev.png --icon-sel=icon-sel-dev.png
+ICONS_DEV := --icon-uns=icon-uns-dev.png --icon-sel=icon-sel.png
 
 PythonUltra.g3a: $(BUILD)/firmware.bin
 	fxgxa --g3a -n PythonUltra $(ICONS_$(BUILDTYPE)) $< -o $@

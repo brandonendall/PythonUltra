@@ -36,6 +36,13 @@ jobs:
           python3 ports/sh/apply_pythonultra_permissions.py
           python3 ports/sh/apply_pythonultra_ui3_compat.py
           python3 ports/sh/apply_pythonultra_symbols.py
+          python3 ports/sh/apply_pythonultra_symbol_safety.py
+          python3 ports/sh/apply_pythonultra_editor_nav.py
+          python3 ports/sh/apply_pythonultra_editor_nav_docs.py
+          python3 ports/sh/apply_pythonultra_ui4.py
+          python3 ports/sh/apply_pythonultra_info_menu.py
+          python3 ports/sh/apply_pythonultra_cfiles.py
+          python3 ports/sh/apply_pythonultra_execution_docs.py
       - name: Generate and check module reference
         run: python3 tools/pythonultra_docs.py --output build-module-docs/reference --runtime-header ports/sh/module_docs.h
       - name: Test runtime documentation in MicroPython

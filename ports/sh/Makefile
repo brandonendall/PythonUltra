@@ -17,6 +17,32 @@ CFLAGS += -m4-nofpu -mb -Wa,--dsp -flto=auto -fstrict-volatile-bitfields \
 LIBS += -nostdlib -Wl,--no-warn-rwx-segments $(SH_LDFLAGS) -Wl,-Map=build/map
 LDFLAGS := -Wno-lto-type-mismatch
 
+PICOC_DIR := ports/sh/vendor/picoc
+PICOC_SRC := \
+    $(PICOC_DIR)/table.c \
+    $(PICOC_DIR)/lex.c \
+    $(PICOC_DIR)/parse.c \
+    $(PICOC_DIR)/expression.c \
+    $(PICOC_DIR)/heap.c \
+    $(PICOC_DIR)/type.c \
+    $(PICOC_DIR)/variable.c \
+    $(PICOC_DIR)/clibrary.c \
+    $(PICOC_DIR)/platform.c \
+    $(PICOC_DIR)/include.c \
+    $(PICOC_DIR)/debug.c \
+    $(PICOC_DIR)/cstdlib/stdio.c \
+    $(PICOC_DIR)/cstdlib/math.c \
+    $(PICOC_DIR)/cstdlib/string.c \
+    $(PICOC_DIR)/cstdlib/stdlib.c \
+    $(PICOC_DIR)/cstdlib/time.c \
+    $(PICOC_DIR)/cstdlib/errno.c \
+    $(PICOC_DIR)/cstdlib/ctype.c \
+    $(PICOC_DIR)/cstdlib/stdbool.c
+
+PICOC_OBJ := $(addprefix $(BUILD)/,$(PICOC_SRC:.c=.o))
+$(PICOC_OBJ) $(BUILD)/ports/sh/modpicoc.o $(BUILD)/ports/sh/picoc_platform_fxcg50.o: \
+    CFLAGS += -DUNIX_HOST -I$(TOP)/ports/sh/vendor/picoc
+
 # Source files
 SRC_C = \
     ports/sh/main.c \
@@ -32,6 +58,9 @@ SRC_C = \
     ports/sh/modgint.c \
     ports/sh/modnumpy.c \
     ports/sh/modos.c \
+    ports/sh/modpicoc.c \
+    ports/sh/picoc_platform_fxcg50.c \
+    $(PICOC_SRC) \
     ports/sh/mphalport.c \
     ports/sh/objgintimage.c \
     ports/sh/objgintfont.c \
@@ -56,6 +85,7 @@ SRC_QSTR += \
     ports/sh/modgint.c \
     ports/sh/modnumpy.c \
     ports/sh/modos.c \
+    ports/sh/modpicoc.c \
     ports/sh/objgintimage.c \
     ports/sh/objgintfont.c \
     ports/sh/pyexec.c \

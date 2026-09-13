@@ -34,6 +34,7 @@ NATIVE_SOURCES = {
     'casioplot': 'ports/sh/modcasioplot.c',
     'kandinsky': 'ports/sh/numworks/modkandinsky.c',
     'ion': 'ports/sh/numworks/modion.c',
+    'picoc': 'ports/sh/modpicoc.c',
 }
 
 

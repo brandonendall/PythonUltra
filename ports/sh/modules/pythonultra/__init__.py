@@ -1,12 +1,15 @@
 """PythonUltra on-calculator reference and UI helpers."""
 
-__version__ = "0.3.2-cg50"
+__version__ = "0.3.3-cg50"
 
 try:
     from ._build import BUILD_ID
 except ImportError:
     BUILD_ID = "development"
 
+# _CATALOG is now a module registry plus host-build fallback. On the calculator,
+# catalog_data() imports the actual module and enumerates every public member so
+# the catalog cannot silently omit constants such as gint.KEY_* values.
 _CATALOG = (
     ("builtins", ("abs", "all", "any", "bool", "bytearray", "bytes", "chr", "compile", "dict", "dir", "enumerate", "eval", "exec", "float", "format", "getattr", "hasattr", "help", "hex", "id", "input", "int", "isinstance", "iter", "len", "list", "map", "max", "min", "next", "object", "open", "ord", "pow", "print", "range", "repr", "reversed", "round", "set", "slice", "sorted", "str", "sum", "tuple", "type", "vars", "zip")),
     ("gint", ("dclear", "dupdate", "dtext", "dline", "drect", "drect_border", "dcircle", "dellipse", "dtriangle", "getkey", "pollevent", "keydown", "image_rgb565")),
@@ -34,6 +37,7 @@ _CATALOG = (
     ("casioplot", ("set_pixel", "get_pixel", "draw_string", "clear_screen", "show_screen")),
     ("kandinsky", ("color", "set_pixel", "get_pixel", "draw_string", "fill_rect")),
     ("ion", ("keydown",)),
+    ("picoc", ("run", "run_file", "version")),
 )
 
 UI_LIGHT = {"bg":0xFFFF, "fg":0x0000, "bar":0xD69A, "sel_bg":0x2104, "sel_fg":0xFFFF, "title":0x001F, "accent":0x07E0}
@@ -44,16 +48,37 @@ def modules():
     return tuple(item[0] for item in _CATALOG)
 
 
-def catalog_data(name):
+def _fallback_catalog(name):
     for module, methods in _CATALOG:
         if module == name:
             return methods
     return ()
 
 
+def catalog_data(name):
+    """Return every public name exported by a catalog module.
+
+    The calculator path is deliberately runtime-driven: if gint gains a new
+    KEY_ constant, drawing primitive, event type, image type, or other public
+    symbol, it automatically appears under gint without maintaining a second
+    hand-picked list here. Names beginning with '_' are the only ones hidden.
+    """
+    name = str(name)
+    try:
+        module = __import__(name)
+        names = tuple(sorted(item for item in dir(module)
+                             if item and not item.startswith("_")))
+        if names:
+            return names
+    except (ImportError, AttributeError):
+        pass
+    return _fallback_catalog(name)
+
+
 def catalog(name=None):
     if name is None:
-        for module, methods in _CATALOG:
+        for module in modules():
+            methods = catalog_data(module)
             print(module + ": " + " ".join(methods))
         return None
     methods = catalog_data(str(name))
@@ -200,7 +225,7 @@ def _popup(title, items, dark=False):
 
 
 def catalog_ui(dark=False):
-    """Open the F3 module -> public methods catalog."""
+    """Open the module -> every public member catalog."""
     while True:
         module = popup("PythonUltra Catalog", modules(), dark)
         if module is None:
