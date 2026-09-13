@@ -78,11 +78,18 @@ extern const struct _mp_print_t mp_debug_print;
 
 /* Extra built-in modules */
 #define MICROPY_PY_ARRAY                  (1)
+#define MICROPY_PY_BINASCII               (1)
+#define MICROPY_PY_BINASCII_CRC32         (1)
 #define MICROPY_PY_COLLECTIONS            (1)
+#define MICROPY_PY_DEFLATE                (1)
+#define MICROPY_PY_DEFLATE_COMPRESS       (1)
 #define MICROPY_PY_MATH                   (1)
 #define MICROPY_PY_CMATH                  (1)
 #define MICROPY_PY_GC                     (1)
+#define MICROPY_PY_ERRNO                  (1)
 #define MICROPY_PY_IO                     (1)
+#define MICROPY_PY_IO_FILEIO              (1)
+#define MICROPY_PY_JSON                   (1)
 #define MICROPY_PY_STRUCT                 (1)
 #define MICROPY_PY_RANDOM                 (1)
 #define MICROPY_PY_RANDOM_EXTRA_FUNCS     (1)
@@ -129,3 +136,8 @@ typedef long mp_off_t;
 
 #define MP_STATE_PORT MP_STATE_VM
 
+/* The shared module reference stays in ROM; only help/__doc__ reads it.
+   Runtime bytecode and the .mpy format are unchanged. */
+#if defined(FXCG50)
+#define MICROPY_PY_DOC_TABLE "ports/sh/module_docs.h"
+#endif

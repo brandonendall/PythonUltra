@@ -1,0 +1,27 @@
+name: Validate native pygame colorkey
+
+# The Run 131 native implementation supersedes the old source-writing patch.
+on:
+  push:
+    branches: [main, cg50-new-display, "migration/**"]
+    paths:
+      - 'ports/sh/modules/pygame/**'
+      - 'ports/sh/modgint.c'
+      - 'ports/sh/colorkey.h'
+      - 'ports/sh/examples/colorkey_motion.py'
+      - 'tests/ports/sh/pygame*'
+      - '.github/workflows/apply-pygame-colorkey.yml'
+  pull_request:
+    branches: [main, cg50-new-display]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native transparency and transforms
+        run: python3 tests/ports/sh/pygame_colorkey.py

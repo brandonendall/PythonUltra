@@ -25,6 +25,8 @@ extern const mp_obj_type_t mp_type_gintfont;
 typedef struct _mp_obj_gintfont_t {
     mp_obj_base_t base;
     font_t font;
+    /* Retained for Python API compatibility; current gint uses line_height. */
+    int line_distance;
     mp_obj_t name;
     mp_obj_t blocks;
     mp_obj_t data;

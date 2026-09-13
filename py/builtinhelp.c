@@ -29,6 +29,7 @@
 
 #include "py/builtin.h"
 #include "py/objmodule.h"
+#include "py/objdoc.h"
 
 #if MICROPY_PY_BUILTINS_HELP
 
@@ -126,6 +127,15 @@ static void mp_help_print_obj(const mp_obj_t obj) {
     #if MICROPY_PY_BUILTINS_HELP_MODULES
     if (obj == MP_OBJ_NEW_QSTR(MP_QSTR_modules)) {
         mp_help_print_modules();
+        return;
+    }
+    #endif
+
+    #ifdef MICROPY_PY_DOC_TABLE
+    mp_obj_t doc = mp_obj_doc_get(obj);
+    if (doc != MP_OBJ_NULL) {
+        mp_obj_print(doc, PRINT_STR);
+        mp_print_str(MP_PYTHON_PRINTER, "\n");
         return;
     }
     #endif

@@ -30,6 +30,35 @@ font_19.png:
   grid.border: 0
   proportional: true
 
+# JetBrains Mono is generated from the pinned official OFL-licensed source at
+# build time. These are fixed-width calculator rasterizations, not TTF files.
+font_jb_9.png:
+  name: font_jb_9
+  type: font
+  charset: print
+  grid.size: 9x10
+  grid.padding: 0
+  grid.border: 0
+  proportional: false
+
+font_jb_13.png:
+  name: font_jb_13
+  type: font
+  charset: print
+  grid.size: 12x17
+  grid.padding: 0
+  grid.border: 0
+  proportional: false
+
+font_jb_19.png:
+  name: font_jb_19
+  type: font
+  charset: print
+  grid.size: 18x23
+  grid.padding: 0
+  grid.border: 0
+  proportional: false
+
 PoliceNW:
   name: numworks
   type: font

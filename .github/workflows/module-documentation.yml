@@ -1,0 +1,55 @@
+name: Module documentation
+
+on:
+  push:
+    branches: [main, cg50-new-display, "migration/**"]
+    paths:
+      - 'ports/**'
+      - 'py/**'
+      - 'extmod/**'
+      - 'docs/library/**'
+      - 'tools/pythonultra_doc*'
+      - 'tests/ports/sh/runtime_docs*'
+      - 'tests/ports/sh/doc_variant/**'
+      - '.github/workflows/module-documentation.yml'
+  pull_request:
+    branches: [main, cg50-new-display]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  reference:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare the actual calculator module source
+        run: |
+          python3 ports/sh/apply_runtime_fixes.py
+          python3 ports/sh/apply_pythonultra_features.py
+          python3 ports/sh/apply_pythonultra_ui2.py
+          python3 ports/sh/apply_pythonultra_permissions.py
+          python3 ports/sh/apply_pythonultra_ui3_compat.py
+          python3 ports/sh/apply_pythonultra_symbols.py
+      - name: Generate and check module reference
+        run: python3 tools/pythonultra_docs.py --output build-module-docs/reference --runtime-header ports/sh/module_docs.h
+      - name: Test runtime documentation in MicroPython
+        run: python3 tests/ports/sh/runtime_docs_host.py --prepared
+      - name: Record reference provenance
+        run: |
+          cp build-module-docs/PythonUltra-Module-Documentation.zip "build-module-docs/PythonUltra-Module-Documentation-docs-run${GITHUB_RUN_NUMBER}.zip"
+          printf 'Repository: %s\nCommit: %s\nRun: %s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$GITHUB_RUN_NUMBER" > build-module-docs/provenance.txt
+          sha256sum build-module-docs/*docs-run*.zip > build-module-docs/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PythonUltra-Module-Documentation-docs-run${{ github.run_number }}
+          path: |
+            build-module-docs/*docs-run*.zip
+            build-module-docs/provenance.txt
+            build-module-docs/SHA256SUMS.txt
+          if-no-files-found: error

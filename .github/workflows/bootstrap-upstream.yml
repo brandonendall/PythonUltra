@@ -1,58 +1,29 @@
-name: Bootstrap upstream PythonExtra
+name: Validate source provenance
 
-# One-time bootstrap: import the Planet Casio upstream source into main.
+# Bootstrap is complete. Never import or push over the maintained repository.
 on:
   push:
+    branches: [main, cg50-new-display, "migration/**"]
     paths:
-      - ".github/workflows/bootstrap-upstream.yml"
+      - 'UPSTREAM_COMMIT'
+      - '.github/workflows/bootstrap-upstream.yml'
+  pull_request:
+    branches: [main, cg50-new-display]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  bootstrap:
-    runs-on: ubuntu-latest
+  provenance:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Check out destination repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Import upstream PythonExtra
-        shell: bash
+      - uses: actions/checkout@v4
+      - name: Verify maintained source and original provenance
         run: |
-          set -euo pipefail
-
-          if [ -d ports/fxcg50 ]; then
-            echo "PythonExtra source already present; nothing to import."
-            exit 0
-          fi
-
-          rm -rf /tmp/pythonextra-upstream
-          git clone --depth 1 \
-            https://git.planet-casio.com/Lephenixnoir/PythonExtra.git \
-            /tmp/pythonextra-upstream
-
-          rsync -a \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'README.md' \
-            /tmp/pythonextra-upstream/ ./
-
-          git -C /tmp/pythonextra-upstream rev-parse HEAD > UPSTREAM_COMMIT
-
-      - name: Commit imported source
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-
-          if git diff --cached --quiet; then
-            echo "No source changes to commit."
-            exit 0
-          fi
-
-          git commit -m "Import upstream PythonExtra source [skip ci]"
-          git push origin HEAD:main
+          test -s UPSTREAM_COMMIT
+          test -f ports/fxcg50/Makefile
+          test -f ports/sh/main.c
+          test -f LICENSE
+          printf 'Repository: %s\nCommit: %s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA"
+          cat UPSTREAM_COMMIT

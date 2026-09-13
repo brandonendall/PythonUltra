@@ -20,6 +20,9 @@
 #include <gint/drivers/keydev.h>
 #include <gint/config.h>
 #include <stdlib.h>
+#if GINT_RENDER_RGB
+#include "colorkey.h"
+#endif
 #if GINT_RENDER_MONO
 #include <gint/gray.h>
 #endif
@@ -65,6 +68,7 @@ static qstr const key_event_fields[] = {
 
 static mp_obj_t mk_key_event(key_event_t ev)
 {
+#if GINT_HW_CP
     if(ev.type == KEYEV_TOUCH_DOWN || ev.type == KEYEV_TOUCH_DRAG ||
        ev.type == KEYEV_TOUCH_UP) {
         mp_obj_t items[] = {
@@ -79,7 +83,9 @@ static mp_obj_t mk_key_event(key_event_t ev)
         };
         return mp_obj_new_attrtuple(key_event_fields, 8, items);
     }
-    else {
+    else
+#endif
+    {
         mp_obj_t items[] = {
             mp_obj_new_int(ev.time),
             mp_obj_new_bool(ev.mod),
@@ -346,6 +352,68 @@ static mp_obj_t modgint_dline(size_t n, mp_obj_t const *args)
     return mp_const_none;
 }
 
+/* Filled triangle rasterizer for game/3D workloads.
+   Vertices are sorted by Y and scanlines are interpolated with 16.16 fixed
+   point arithmetic, keeping the Python-facing loop entirely in C. */
+static void modgint_swap_vertex(int *x1, int *y1, int *x2, int *y2)
+{
+    int x = *x1, y = *y1;
+    *x1 = *x2; *y1 = *y2;
+    *x2 = x;   *y2 = y;
+}
+
+static mp_obj_t modgint_dtriangle(size_t n, mp_obj_t const *args)
+{
+    int x0 = mp_obj_get_int(args[0]);
+    int y0 = mp_obj_get_int(args[1]);
+    int x1 = mp_obj_get_int(args[2]);
+    int y1 = mp_obj_get_int(args[3]);
+    int x2 = mp_obj_get_int(args[4]);
+    int y2 = mp_obj_get_int(args[5]);
+    int color = mp_obj_get_int(args[6]);
+
+    if(y0 > y1) modgint_swap_vertex(&x0, &y0, &x1, &y1);
+    if(y1 > y2) modgint_swap_vertex(&x1, &y1, &x2, &y2);
+    if(y0 > y1) modgint_swap_vertex(&x0, &y0, &x1, &y1);
+
+    if(y0 == y2) {
+        int xmin = x0, xmax = x0;
+        if(x1 < xmin) xmin = x1;
+        if(x2 < xmin) xmin = x2;
+        if(x1 > xmax) xmax = x1;
+        if(x2 > xmax) xmax = x2;
+        dline(xmin, y0, xmax, y0, color);
+        return mp_const_none;
+    }
+
+    for(int y = y0; y <= y2; y++) {
+        int64_t xa = ((int64_t)x0 << 16)
+            + ((int64_t)(x2 - x0) * (y - y0) << 16) / (y2 - y0);
+        int64_t xb;
+
+        if(y < y1 && y1 != y0) {
+            xb = ((int64_t)x0 << 16)
+                + ((int64_t)(x1 - x0) * (y - y0) << 16) / (y1 - y0);
+        }
+        else if(y2 != y1) {
+            xb = ((int64_t)x1 << 16)
+                + ((int64_t)(x2 - x1) * (y - y1) << 16) / (y2 - y1);
+        }
+        else {
+            xb = (int64_t)x1 << 16;
+        }
+
+        int a = (int)(xa >> 16);
+        int b = (int)(xb >> 16);
+        if(a > b) {
+            int t = a; a = b; b = t;
+        }
+        dline(a, y, b, y, color);
+    }
+
+    return mp_const_none;
+}
+
 static mp_obj_t modgint_dhline(mp_obj_t arg1, mp_obj_t arg2)
 {
     mp_int_t y = mp_obj_get_int(arg1);
@@ -440,6 +508,20 @@ static mp_obj_t modgint_dtext(size_t n, mp_obj_t const *args)
     dtext(x, y, fg, str);
     return mp_const_none;
 }
+
+static mp_obj_t modgint_dsize(mp_obj_t text_in)
+{
+    char const *text = mp_obj_str_get_str(text_in);
+    int width = 0, height = 0;
+    /* NULL selects gint's currently configured font. This is required by the
+       editor because the built-in system fonts are proportional. */
+    dsize(text, NULL, &width, &height);
+    mp_obj_t items[2] = {
+        MP_OBJ_NEW_SMALL_INT(width), MP_OBJ_NEW_SMALL_INT(height)
+    };
+    return mp_obj_new_tuple(2, items);
+}
+FUN_1(dsize);
 
 static mp_obj_t modgint_dfont(mp_obj_t new_font)
 {
@@ -560,6 +642,31 @@ static mp_obj_t modgint_dsubimage(size_t n_args, const mp_obj_t *args)
     return mp_const_none;
 }
 
+#if GINT_RENDER_RGB
+static mp_obj_t modgint_dsubimage_colorkey(size_t n_args, const mp_obj_t *args)
+{
+    bopti_image_t img;
+    objgintimage_get(args[2], &img);
+    if(img.format != IMAGE_RGB565)
+        mp_raise_ValueError("color-key blit requires RGB565 image");
+    mp_obj_gintimage_t *object = MP_OBJ_TO_PTR(args[2]);
+    mp_buffer_info_t buffer;
+    mp_get_buffer_raise(object->data, &buffer, MP_BUFFER_READ);
+    if(img.width <= 0 || img.height <= 0 || img.stride < img.width * 2 ||
+       (uint64_t)(img.height - 1) * img.stride + (uint64_t)img.width * 2 > buffer.len)
+        mp_raise_ValueError("invalid RGB565 image buffer");
+    pe_blit_rgb565_key(gint_vram, DWIDTH, DHEIGHT,
+        dwindow.left, dwindow.top, dwindow.right, dwindow.bottom,
+        buffer.buf, img.width, img.height, img.stride,
+        mp_obj_get_int(args[0]), mp_obj_get_int(args[1]),
+        mp_obj_get_int(args[3]), mp_obj_get_int(args[4]),
+        mp_obj_get_int(args[5]), mp_obj_get_int(args[6]),
+        (uint16_t)mp_obj_get_int(args[7]));
+    return mp_const_none;
+}
+FUN_BETWEEN(dsubimage_colorkey, 8, 8);
+#endif
+
 FUN_0(__init__);
 
 #if GINT_RENDER_RGB
@@ -578,6 +685,7 @@ FUN_BETWEEN(drect_border, 7, 7);
 FUN_3(dpixel);
 FUN_2(dgetpixel);
 FUN_BETWEEN(dline, 5, 5);
+FUN_BETWEEN(dtriangle, 7, 7);
 FUN_2(dhline);
 FUN_2(dvline);
 FUN_BETWEEN(dcircle, 5, 5);
@@ -681,22 +789,6 @@ static const mp_rom_map_elem_t modgint_module_globals_table[] = {
     INT(KEY_EQUALS),
     INT(KEY_CLEAR),
 
-    /* Key codes for the fx-CG 100 / Graph Math+ */
-    INT(KEY_ON),
-    INT(KEY_HOME),
-    INT(KEY_PREVTAB),
-    INT(KEY_NEXTTAB),
-    INT(KEY_PAGEUP),
-    INT(KEY_PAGEDOWN),
-    INT(KEY_SETTINGS),
-    INT(KEY_BACK),
-    INT(KEY_OK),
-    INT(KEY_CATALOG),
-    INT(KEY_TOOLS),
-    INT(KEY_FORMAT),
-    INT(KEY_SQRT),
-    INT(KEY_EXPFUN),
-
     /* Key aliases (deprecated--no more will be added) */
     INT(KEY_X2),
     INT(KEY_CARET),
@@ -714,9 +806,11 @@ static const mp_rom_map_elem_t modgint_module_globals_table[] = {
     INT(KEYEV_DOWN),
     INT(KEYEV_UP),
     INT(KEYEV_HOLD),
+#if GINT_HW_CP
     INT(KEYEV_TOUCH_DOWN),
     INT(KEYEV_TOUCH_DRAG),
     INT(KEYEV_TOUCH_UP),
+#endif
 
     INT(GETKEY_MOD_SHIFT),
     INT(GETKEY_MOD_ALPHA),
@@ -788,6 +882,7 @@ static const mp_rom_map_elem_t modgint_module_globals_table[] = {
     OBJ(dpixel),
     OBJ(dgetpixel),
     OBJ(dline),
+    OBJ(dtriangle),
     OBJ(dhline),
     OBJ(dvline),
     OBJ(dcircle),
@@ -796,6 +891,7 @@ static const mp_rom_map_elem_t modgint_module_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_font), MP_ROM_PTR(&mp_type_gintfont) },   
     OBJ(dfont),
+    OBJ(dsize),
     OBJ(dtext_opt),
     OBJ(dtext),
 
@@ -810,6 +906,9 @@ static const mp_rom_map_elem_t modgint_module_globals_table[] = {
     #endif
     OBJ(dimage),
     OBJ(dsubimage),
+    #if GINT_RENDER_RGB
+    OBJ(dsubimage_colorkey),
+    #endif
 
     /* <gint/image.h> */
 

@@ -1,5 +1,13 @@
 CROSS_COMPILE := sh-elf-
 
+# The compact pygame layer currently targets the color fx-CG50 build. Point
+# MPY_LIB_DIR at the source tree because this manifest uses no micropython-lib
+# packages; mkrules only requires a directory containing README.md.
+ifeq ($(TARGETCASIO),"FXCG50")
+    MPY_LIB_DIR := $(TOP)
+    FROZEN_MANIFEST := $(TOP)/ports/sh/manifest.py
+endif
+
 include $(TOP)/py/py.mk
 include $(TOP)/extmod/extmod.mk
 
@@ -16,8 +24,14 @@ SRC_C = \
     ports/sh/debug.c \
     ports/sh/fdfile.c \
     ports/sh/keymap.c \
+    ports/sh/libc_compat.c \
+    ports/sh/pathutil.c \
     ports/sh/modcasioplot.c \
+    ports/sh/modchecksum.c \
+    ports/sh/modctypes.c \
     ports/sh/modgint.c \
+    ports/sh/modnumpy.c \
+    ports/sh/modos.c \
     ports/sh/mphalport.c \
     ports/sh/objgintimage.c \
     ports/sh/objgintfont.c \
@@ -29,21 +43,34 @@ SRC_C = \
     shared/runtime/stdout_helpers.c \
     shared/runtime/interrupt_char.c \
 
+# Prevent GCC from rewriting these fallback libc implementations as calls to
+# the same unavailable target symbols.
+$(BUILD)/ports/sh/libc_compat.o: CFLAGS += $(CFLAGS_BUILTIN)
+
 SRC_QSTR += \
     ports/sh/fdfile.c \
     ports/sh/main.c \
     ports/sh/modcasioplot.c \
+    ports/sh/modchecksum.c \
+    ports/sh/modctypes.c \
     ports/sh/modgint.c \
+    ports/sh/modnumpy.c \
+    ports/sh/modos.c \
     ports/sh/objgintimage.c \
     ports/sh/objgintfont.c \
     ports/sh/pyexec.c \
 
-ifeq ($(shell [[ x"$$(git describe)" == x"$$(git describe main)" ]] \
+# The upstream project normally has release tags available to git describe.
+# Fork/import workflows may intentionally omit upstream Git history, so always
+# provide a usable build identifier instead of allowing git describe to fail.
+GIT_DESCRIBE := $(shell git describe --tags --always 2>/dev/null || git rev-parse --short HEAD)
+
+ifeq ($(shell [[ x"$$(git rev-parse HEAD)" == x"$$(git rev-parse main 2>/dev/null)" ]] \
               && [[ -z "$$(git status -uno --porcelain)" ]] \
               && echo y),y)
     BUILDTYPE := RELEASE
     BUILDTYPE_STR := $(shell echo -e "\x1b[32;1mRelease build\x1b[0m")
-    PE_BUILD := $(shell git describe)
+    PE_BUILD := $(GIT_DESCRIBE)
 else
     BUILDTYPE := DEV
     BUILDTYPE_STR := $(shell echo -e "\x1b[33;1mDevelopment build\x1b[0m")
@@ -74,7 +101,7 @@ else ifeq ($(TARGETCASIO),"FXCP")
     PE_EXT_NUMWORKS := 0
 endif
 
-HEADER := PythonExtra for $(PE_NAME)
+HEADER := PythonUltra for $(PE_NAME)
 HEADER := $(shell echo -e "\x1b[4;1m$(HEADER)\x1b[0m")
 HEADER := $(HEADER) - $(BUILDTYPE_STR)
 HASHES := \#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
@@ -98,14 +125,14 @@ $(BUILD)/sh_assets/%.o: % $(SH_METADATA)
 	$(Q)mkdir -p $(dir $@)
 	$(Q)fxconv --toolchain=$(CROSS_COMPILE:%-=%) $(SH_CONVFLAGS) $< -o $@
 
-ARCHIVE := PythonExtra-$(shell git describe).zip
+ARCHIVE := PythonUltra-$(GIT_DESCRIBE).zip
 
 # Weird rules calling back to fxcg50 and fx9860g3, both of which include this
 release:
 	$(MAKE) -C ../fx9860g3
 	$(MAKE) -C ../fxcg50
 	$(MAKE) -C ../fxcp
-	cd ../sh && zip "$(ARCHIVE)" -j ../fx9860g3/PythonEx.g1a ../fxcg50/PythonExtra.g3a ../fxcp/PythonExtra-hh2.bin
+	cd ../sh && zip "$(ARCHIVE)" -j ../fx9860g3/PythonEx.g1a ../fxcg50/PythonUltra.g3a ../fxcp/PythonExtra-hh2.bin
 	cd ../sh && zip "$(ARCHIVE)" -r examples modules
 
 .PHONY: release

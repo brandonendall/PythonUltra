@@ -26,3 +26,5 @@ ports/cc3200/hal/des.c -text
 ports/cc3200/hal/i2s.c -text
 ports/cc3200/hal/i2s.h -text
 ports/cc3200/version.h -text
+# Preserve downloadable reference archives byte for byte on every platform.
+*.zip binary

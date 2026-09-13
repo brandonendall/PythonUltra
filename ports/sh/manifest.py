@@ -1,0 +1,10 @@
+# Freeze calculator-sized compatibility packages into the add-in.
+freeze("modules", "pygame", opt=3)
+freeze("modules", "numpy", opt=3)
+freeze("modules", "py3d", opt=3)
+freeze("modules", "pythonultra", opt=3)
+freeze("modules", "pyeditor", opt=3)
+freeze("modules", "pyfiles", opt=3)
+freeze("modules", "zipfile", opt=3)
+freeze("modules", "pyperm", opt=3)
+freeze("modules", "pyterm", opt=3)

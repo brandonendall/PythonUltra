@@ -88,6 +88,7 @@ mp_obj_t objgintfont_make_from_gint_font(font_t const *font)
 {
   mp_obj_gintfont_t *self = mp_obj_malloc(mp_obj_gintfont_t, &mp_type_gintfont);
   memcpy(&self->font, font, sizeof *font);
+  self->line_distance = font->line_height;
   int data_size=0;
 
   /* One u32 (L) for each block (combines offset and size) */
@@ -126,7 +127,7 @@ static void font_print(
   int block_count = self->font.block_count;
   int glyph_count = self->font.glyph_count;
   int char_spacing = self->font.char_spacing;
-  int line_distance = self->font.line_distance;
+  int line_distance = self->line_distance;
 
   mp_printf(print, "<font '%s', %s, height %d/%d, %d blocks, %d glyphs, "
     "char spacing %d, line height %d>",
@@ -151,7 +152,7 @@ static void font_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest)
       else if(attr == MP_QSTR_char_spacing)
           dest[0] = MP_OBJ_NEW_SMALL_INT(self->font.char_spacing);
       else if(attr == MP_QSTR_line_distance)
-          dest[0] = MP_OBJ_NEW_SMALL_INT(self->font.line_distance);
+          dest[0] = MP_OBJ_NEW_SMALL_INT(self->line_distance);
       else if(attr == MP_QSTR_name)
           dest[0] = self->name;
       else if(attr == MP_QSTR_blocks)
@@ -188,7 +189,7 @@ mp_obj_t objgintfont_make_monospaced(
     self->font.block_count      = block_count;
     self->font.glyph_count      = glyph_count;
     self->font.char_spacing     = char_spacing;
-    self->font.line_distance    = line_distance;
+    self->line_distance         = line_distance;
     self->font.blocks           = blocks;
     self->font.data             = data;
     self->font.glyph_index      = NULL;
@@ -217,7 +218,7 @@ mp_obj_t objgintfont_make_proportional(
     self->font.block_count      = block_count;
     self->font.glyph_count      = glyph_count;
     self->font.char_spacing     = char_spacing;
-    self->font.line_distance    = line_distance;
+    self->line_distance         = line_distance;
     self->font.blocks           = blocks;
     self->font.data             = data;
     self->font.width            = 0;

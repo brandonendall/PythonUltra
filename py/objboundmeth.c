@@ -28,6 +28,7 @@
 
 #include "py/obj.h"
 #include "py/runtime.h"
+#include "py/objdoc.h"
 
 typedef struct _mp_obj_bound_meth_t {
     mp_obj_base_t base;
@@ -146,3 +147,11 @@ mp_obj_t mp_obj_new_bound_meth(mp_obj_t meth, mp_obj_t self) {
     o->self = self;
     return MP_OBJ_FROM_PTR(o);
 }
+
+#ifdef MICROPY_PY_DOC_TABLE
+mp_obj_t mp_obj_bound_meth_unwrap(mp_obj_t obj, mp_obj_t *owner) {
+    mp_obj_bound_meth_t *self = MP_OBJ_TO_PTR(obj);
+    *owner = self->self;
+    return self->meth;
+}
+#endif

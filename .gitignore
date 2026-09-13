@@ -27,3 +27,7 @@ user.props
 
 # vscode
 .vscode/
+# Generated from the prepared calculator API before compilation.
+/ports/sh/module_docs.h
+/build-module-docs/
+/build-docs-host/

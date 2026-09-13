@@ -1,0 +1,328 @@
+name: Build fx-CG50
+
+on:
+  push:
+    branches:
+      - main
+      - cg50-new-display
+      - "migration/**"
+    paths:
+      - "ports/**"
+      - "py/**"
+      - "extmod/**"
+      - "shared/**"
+      - "tests/**"
+      - "tools/pythonultra_doc*"
+      - "docs/library/**"
+      - "logo/**"
+      - "Makefile"
+      - "UPSTREAM_COMMIT"
+      - ".github/workflows/build-cg50.yml"
+  pull_request:
+    branches: [main, cg50-new-display]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            curl git python3 python3-pil build-essential cmake pkg-config \
+            libusb-1.0-0-dev libsdl2-dev libpng-dev libncurses-dev
+
+      - name: Prepare custom G3A icon
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import shutil
+
+          # Exact pixels recovered from the user's supplied run130.1 binary.
+          source = Path("logo/run130-1-icon.png")
+          out_dir = Path("ports/fxcg50")
+          size = (92, 64)
+
+          image = Image.open(source).convert("RGB")
+          assert image.size == size, "Reference icon must be 92x64"
+
+          for name in (
+              "icon-uns.png",
+              "icon-sel.png",
+              "icon-uns-dev.png",
+              "icon-sel-dev.png",
+          ):
+              shutil.copyfile(source, out_dir / name)
+
+          # Regression check: all four outer corners must be black.
+          for name in ("icon-uns.png", "icon-sel.png", "icon-uns-dev.png", "icon-sel-dev.png"):
+              check = Image.open(out_dir / name).convert("RGB")
+              corners = (check.getpixel((0, 0)), check.getpixel((91, 0)),
+                         check.getpixel((0, 63)), check.getpixel((91, 63)))
+              if any(pixel != (0, 0, 0) for pixel in corners):
+                  raise SystemExit("Icon background regression: " + name)
+
+          print(f"Preserved supplied G3A icon from {source}: {size[0]}x{size[1]}")
+          PY
+
+      - name: Restore fxSDK toolchain cache
+        id: cache-fxsdk
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.local
+          key: fxsdk-${{ runner.os }}-badbd0fd-09e2cf5f-ccb5feae-v1
+
+      - name: Add local tools to PATH
+        shell: bash
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install GiteaPC
+        if: steps.cache-fxsdk.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl "https://git.planet-casio.com/Lephenixnoir/GiteaPC/raw/branch/master/install.sh" \
+            -o /tmp/giteapc-install.sh
+          printf '\n' | bash /tmp/giteapc-install.sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install fxSDK toolchain and libraries
+        if: steps.cache-fxsdk.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+
+          ensure_xz_archive() {
+            local url="$1"
+            local destination="$2"
+            local temporary="${destination}.tmp"
+            if xz -t "$destination" >/dev/null 2>&1; then return 0; fi
+            rm -f "$destination" "$temporary"
+            mkdir -p "$(dirname "$destination")"
+            curl --fail --location --retry 5 --retry-delay 10 --retry-all-errors \
+              --connect-timeout 30 "$url" -o "$temporary"
+            xz -t "$temporary"
+            mv "$temporary" "$destination"
+          }
+
+          install_with_retry() {
+            local attempt
+            local binutils_root="$HOME/.local/share/giteapc/Lephenixnoir/sh-elf-binutils"
+            local gcc_root="$HOME/.local/share/giteapc/Lephenixnoir/sh-elf-gcc"
+            for attempt in 1 2 3; do
+              if printf '\n' | giteapc install "$@"; then return 0; fi
+              echo "GiteaPC attempt $attempt failed; repairing GNU archives"
+              rm -rf "$binutils_root/binutils-2.42" "$gcc_root/gcc-14.1.0"
+              ensure_xz_archive "https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.xz" \
+                "$binutils_root/binutils-2.42.tar.xz"
+              ensure_xz_archive "https://ftp.gnu.org/gnu/gcc/gcc-14.1.0/gcc-14.1.0.tar.xz" \
+                "$gcc_root/gcc-14.1.0.tar.xz"
+              if [ "$attempt" -lt 3 ]; then sleep $((attempt * 10)); fi
+            done
+            return 1
+          }
+
+          install_with_retry \
+            Lephenixnoir/fxsdk:noudisks2 \
+            Lephenixnoir/sh-elf-binutils \
+            Lephenixnoir/sh-elf-gcc
+          install_with_retry Lephenixnoir/OpenLibm Vhex-Kernel-Core/fxlibc
+          install_with_retry Lephenixnoir/sh-elf-gcc
+          install_with_retry Lephenixnoir/gint
+
+          set +e
+          printf '\n' | giteapc install Lephenixnoir/JustUI
+          justui_rc=$?
+          set -e
+          JUSTUI_DIR="$HOME/.local/share/giteapc/Lephenixnoir/JustUI"
+          if [ "$justui_rc" -ne 0 ]; then
+            test -f "$JUSTUI_DIR/src/jlabel.c"
+            sed -i 's/->line_distance/->line_height/g' "$JUSTUI_DIR/src/jlabel.c"
+            gmake -C "$JUSTUI_DIR" -f giteapc.make build
+            gmake -C "$JUSTUI_DIR" -f giteapc.make install
+          fi
+
+      - name: Backport newer-display R61524 protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          GINT_BASE=badbd0fd2bd8ac796fd55d49b93691741bd8a139
+          GINT_DISPLAY_COMMIT=27000967d72d16f92ab54e7a10c7505ef85e2e85
+          GINT_DIR="$(giteapc show -p Lephenixnoir/gint)"
+          git -C "$GINT_DIR" restore --source="$GINT_BASE" --worktree --staged src/r61524/r61524.c
+          git -C "$GINT_DIR" checkout --detach "$GINT_BASE"
+          git -C "$GINT_DIR" diff "$GINT_DISPLAY_COMMIT^" "$GINT_DISPLAY_COMMIT" \
+            -- src/r61524/r61524.c > /tmp/gint-new-display.patch
+          git -C "$GINT_DIR" apply --check /tmp/gint-new-display.patch
+          git -C "$GINT_DIR" apply /tmp/gint-new-display.patch
+          git -C "$GINT_DIR" diff --check
+          grep -q 'version == 50 || version == 82' "$GINT_DIR/src/r61524/r61524.c"
+          ( cd "$GINT_DIR"; fxsdk build-cg; fxsdk build-cg install )
+          test "$(git -C "$GINT_DIR" rev-parse HEAD)" = "$GINT_BASE"
+
+      - name: Save fxSDK toolchain cache
+        if: steps.cache-fxsdk.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.local
+          key: fxsdk-${{ runner.os }}-badbd0fd-09e2cf5f-ccb5feae-v1
+
+      - name: Record dependency versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          mkdir -p build-info
+          {
+            echo "PythonUltra repository: $GITHUB_REPOSITORY"
+            echo "PythonUltra: $GITHUB_SHA"
+            echo "Ref: $GITHUB_REF"
+            echo "Workflow run: $GITHUB_RUN_NUMBER attempt $GITHUB_RUN_ATTEMPT"
+            echo "Upstream PythonExtra: $(cat UPSTREAM_COMMIT 2>/dev/null || echo unknown)"
+            echo "gint: $(git -C "$(giteapc show -p Lephenixnoir/gint)" rev-parse HEAD)"
+            echo "fxSDK: $(git -C "$(giteapc show -p Lephenixnoir/fxsdk)" rev-parse HEAD)"
+            echo "JustUI: $(git -C "$(giteapc show -p Lephenixnoir/JustUI)" rev-parse HEAD)"
+          } | tee build-info/versions.txt
+
+      - name: Capture pinned gint display sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          GINT_DIR="$(giteapc show -p Lephenixnoir/gint)"
+          git -C "$GINT_DIR" archive --format=tar.gz \
+            --output="$GITHUB_WORKSPACE/build-info/gint-source.tar.gz" HEAD
+          git -C "$GINT_DIR" log --all --date=iso --pretty=format:'%H %ad %s' \
+            --regexp-ignore-case --grep='display\|r61524\|cg50\|fx-cg' \
+            > build-info/gint-display-history.txt
+          for commit in \
+            27000967d72d16f92ab54e7a10c7505ef85e2e85 \
+            31f2506e3b94cd8332b97a519471017e52e374d6 \
+            982055c999bdd0d73d23dad7c75ad5bd87b22922
+          do
+            git -C "$GINT_DIR" show --format=fuller --stat --patch "$commit" \
+              > "$GITHUB_WORKSPACE/build-info/gint-$commit.patch"
+          done
+          {
+            for older in \
+              27000967d72d16f92ab54e7a10c7505ef85e2e85 \
+              31f2506e3b94cd8332b97a519471017e52e374d6
+            do
+              if git -C "$GINT_DIR" merge-base --is-ancestor "$older" \
+                982055c999bdd0d73d23dad7c75ad5bd87b22922
+              then
+                echo "$older is an ancestor of 982055c999bdd0d73d23dad7c75ad5bd87b22922"
+              else
+                echo "$older is NOT an ancestor of 982055c999bdd0d73d23dad7c75ad5bd87b22922"
+              fi
+            done
+          } > build-info/gint-compat-ancestry.txt
+
+      - name: Test compact pygame compatibility layer
+        shell: bash
+        run: python3 tests/ports/sh/pygame_compat.py
+
+      - name: Test runtime documentation in MicroPython
+        run: |
+          # Source preparation scripts compose in order; run the sequence once.
+          make -C ports/fxcg50 pythonultra-runtime-fixes
+          python3 tests/ports/sh/runtime_docs_host.py --prepared
+
+      - name: Build PythonUltra for fx-CG50
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          # Source preparation and documentation tests completed above.
+          make -C ports/fxcg50 -j2 PYTHONULTRA_RUNTIME_PREPARED=1
+
+      - name: Smoke-check G3A and REPL surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          g3a = Path("ports/fxcg50/PythonUltra.g3a")
+          data = g3a.read_bytes()
+          if len(data) < 100_000:
+              raise SystemExit(f"G3A is unexpectedly small: {len(data)} bytes")
+          if len(data) >= 2_000_000:
+              raise SystemExit(f"G3A exceeds the 2 MB target: {len(data)} bytes")
+
+          required = {
+              b"PythonUltra": "application identity",
+              b"*** SHELL INITIALIZED ***": "interactive REPL",
+              b"dtriangle": "native triangle binding",
+              b"numpy": "compact numeric module",
+              b"matrix": "NumPy matrix compatibility",
+              b"pygame": "pygame compatibility package",
+              b"dsubimage_colorkey": "native color-key sprite drawing",
+              b"py3d": "software 3D package",
+              b"vec3(x=0.0, y=0.0, z=0.0)": "ROM-backed runtime documentation",
+              b"pyeditor": "text editor",
+              b"pyfiles": "file manager",
+              b"pyterm": "terminal command layer",
+              b"zipfile": "ZIP support",
+              b"catalog_ui": "modal F3 catalog",
+              b"info_ui": "F6 build info",
+          }
+          missing = [label for marker, label in required.items() if marker not in data]
+          if missing:
+              raise SystemExit("Missing G3A surfaces: " + ", ".join(missing))
+
+          print(f"Validated {g3a}: {len(data)} bytes")
+          for label in required.values():
+              print(f"  present: {label}")
+          PY
+
+      - name: Generate module reference for this build
+        run: python3 tools/pythonultra_docs.py --output build-module-docs/reference
+
+      - name: Prepare numbered download
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate="ports/fxcg50/PythonUltra-CG50-run${GITHUB_RUN_NUMBER}.g3a"
+          cp ports/fxcg50/PythonUltra.g3a "$candidate"
+          cp build-module-docs/PythonUltra-Module-Documentation.zip "build-module-docs/PythonUltra-Module-Documentation-run${GITHUB_RUN_NUMBER}.zip"
+          mkdir -p build-info
+          sha256sum "$candidate" "build-module-docs/PythonUltra-Module-Documentation-run${GITHUB_RUN_NUMBER}.zip" | tee build-info/SHA256SUMS.txt
+          printf 'Run: %s\nCommit: %s\n' "$GITHUB_RUN_NUMBER" "$GITHUB_SHA" > build-info/candidate.txt
+
+      - name: Record firmware section sizes
+        run: |
+          sh-elf-size ports/fxcg50/build/firmware.elf | tee build-info/firmware-size.txt
+
+      - name: Upload G3A and guide
+        uses: actions/upload-artifact@v4
+        with:
+          name: PythonUltra-CG50-run${{ github.run_number }}
+          path: |
+            ports/fxcg50/PythonUltra-CG50-run*.g3a
+            ports/sh/PythonUltra_User_Guide.txt
+            build-info/
+            build-module-docs/PythonUltra-Module-Documentation-run*.zip
+            ports/sh/examples/colorkey_motion.py
+          if-no-files-found: error

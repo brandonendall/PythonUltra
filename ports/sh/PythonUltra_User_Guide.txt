@@ -1,0 +1,481 @@
+PYTHONULTRA USER GUIDE
+Casio fx-CG50
+Development branch: cg50-new-display
+
+============================================================
+1. OVERVIEW
+============================================================
+PythonUltra is a community collaboration build based on PythonExtra and
+MicroPython for the Casio fx-CG50. It includes the newer-display compatibility
+work plus calculator-sized extensions for Python, game development, files,
+editing, and terminal-style use.
+
+Collaboration:
+- OffCamera-Civilman project
+- Brandon / GitHub @brandonendall
+- Based on PythonExtra by Lephenixnoir, SlyVTT and Planete Casio contributors
+
+============================================================
+2. MAIN F-KEYS AND SHELL KEYS
+============================================================
+F1  FILES     Open PythonUltra Files
+F2  SHELL     Return to the terminal/shell
+F3  CATALOG   Modal PythonUltra module/method catalog
+F4  THEME     Toggle light/dark shell theme
+F5  EDITOR    Open a new text file in the PythonUltra editor
+F6  INFO      Build/collaboration information
+
+Shell command history and scrolling:
+UP          previous command
+DOWN        next command
+SHIFT+UP    scroll shell output up
+SHIFT+DOWN  scroll shell output down
+
+Programming symbols:
+SHIFT+DEL opens the programming-symbol picker. Selecting a character inserts
+it at the current command-line cursor position.
+
+The palette includes common Python/shell punctuation and operators such as:
+  '  "  :  ;  ,  -  .  @  #  $  %  ^  &  *  !  ?  ~  `
+  <  >  =  +  /  \  |  _  (  )  [  ]  {  }
+
+============================================================
+3. TERMINAL MODE
+============================================================
+PythonUltra starts in a Linux-like terminal mode. This is a compact calculator
+command environment, not a full GNU/Linux shell.
+
+Available commands:
+help man ls cd pwd mkdir touch rm rmdir mv cp cat echo clear chmod
+python zip unzip edit files modules info version alias unalias source
+history font theme rc
+
+Examples:
+  pwd
+  ls
+  ls -l
+  cd games
+  mkdir demo
+  mkdir -p games/demo
+  touch notes.txt
+  mv old.txt new.txt
+  cp game.py game_backup.py
+  cat notes.txt
+  chmod 444 notes.txt
+  chmod 755 hello.py
+  alias ll='ls -l'
+  history 10
+  font small
+  theme dark
+  rc edit
+  rm notes.txt
+  rmdir empty_folder
+  clear
+
+Built-in manual/help:
+  help
+  help python
+  man python
+  man chmod
+  python -h
+  python --help
+  ls -h
+  ls --help
+  zip -h
+  zip --help
+
+PythonUltra maintains its own working directory for terminal commands, so cd
+and pwd behave like a shell even though the calculator OS is not GNU/Linux.
+
+Terminal configuration is stored in:
+  /.pythonultrarc
+
+Persistent command history is stored in:
+  /.pythonultra_history
+
+Example RC entries:
+  set theme=dark
+  set font=normal
+  set startup=files
+  cd /games
+  alias ll='ls -l'
+
+Use set startup=terminal to start at the terminal instead of Files.
+Files is the default if the startup setting is missing. Save the RC and restart
+PythonUltra to check the startup view; rc reload applies theme/font in-session.
+
+Menu frame color is also configurable in /.pythonultrarc:
+  set menu_border=cyan
+  set menu_border=#ff8800
+  set menu_border=0x07ff
+Choose one line. Names: cyan, red, green, blue, yellow, magenta, white,
+black, orange. #RRGGBB is converted to the calculator's RGB565 format.
+Missing/invalid settings use cyan. Run "rc reload" after editing the RC.
+This controls Catalog/Files modal frames and editor popup borders.
+
+============================================================
+4. PYTHON FROM THE TERMINAL
+============================================================
+Enter the interactive Python REPL:
+  python
+
+Return from the Python REPL to terminal mode:
+  exit
+or:
+  exit()
+
+Run a Python file:
+  python hello.py
+
+Run a file with arguments:
+  python hello.py Brandon 42
+
+Inside hello.py:
+  import sys
+  print(sys.argv)
+
+The result is equivalent to:
+  ["hello.py", "Brandon", "42"]
+
+Pass a flag to your script:
+  python hello.py -h
+
+Show PythonUltra's Python command help instead:
+  python -h
+  python --help
+
+Run code directly:
+  python -c "print(2+2)"
+
+PythonUltra permissions distinguish interpreter execution from direct
+execution. Running `python file.py` requires read permission. Direct execution
+with `./file.py` additionally requires execute permission.
+
+============================================================
+5. FILES AND PERMISSIONS
+============================================================
+PythonUltra Files is a graphical file manager with dark/light themes.
+
+Functions include:
+- browse folders
+- run Python files
+- edit text files
+- create files with any filename/extension
+- create folders
+- rename files/folders
+- delete files
+- remove empty folders
+- ZIP compression
+- ZIP extraction
+- view/change PythonUltra rwx permissions
+
+Useful file types include:
+.py .txt .csv .json .md and other plain-text formats.
+
+For a Python file, choose Run or Edit. Ordinary text files open in the editor.
+
+PythonUltra implements a calculator-side rwx permission layer. It is enforced
+by PythonUltra rather than by Casio OS itself.
+
+Examples:
+  chmod 444 file.txt
+  chmod 644 notes.txt
+  chmod 755 hello.py
+
+============================================================
+6. EDITOR
+============================================================
+PythonUltra includes a calculator-native text/code editor based on the
+PyEditorRC concept, refactored for PythonUltra.
+
+Primary editor functions:
+- open/save files
+- create new files
+- edit Python and ordinary text
+- syntax highlighting
+- search/find
+- selection/copy/cut support
+- run Python code from the editor
+- PythonUltra catalog access while editing
+- multiple syntax-highlighting themes
+- small/normal/large editor font controls
+- programming-symbol picker with SHIFT+DEL
+
+Editor themes include:
+- GitHub Dark
+- GitHub Light
+- Linux Terminal-style
+- PythonUltra Dark
+- PythonUltra Light
+
+Theme colors cover the editor background, normal text, selection, keywords,
+built-ins, numbers, strings, comments, decorators, operators and module names.
+
+The current development build also generates calculator raster-font assets
+from a pinned JetBrains Mono source during the build. The source font itself is
+not bundled as a downloadable project artifact.
+
+The editor offers the known-good System Small/Normal/Large fonts. JetBrains
+editor options are hidden pending hardware verification. Status and F-key bars
+stay small regardless of the body font. New chooses an unused filename; Open
+keeps the existing buffer if loading fails. Limits: 64 KiB / 2048 lines.
+Save stages a temporary sibling and keeps the original until replacement can
+succeed. If storage interrupts recovery, a .pu-backup sibling may remain.
+F1 Run saves when needed and executes a Python file once.
+
+============================================================
+7. ZIP / UNZIP
+============================================================
+PythonUltra includes compact ZIP support using MicroPython's DEFLATE engine.
+
+Compress a file or folder:
+  zip project.zip project
+
+If .zip is omitted from the archive name, PythonUltra adds it.
+
+Extract an archive:
+  unzip project.zip
+
+Extract to a chosen destination:
+  unzip project.zip project_copy
+
+The ZIP layer supports standard stored/DEFLATE entries, CRC checks, folder
+archives, and rejects unsafe parent-path extraction such as ../ paths.
+
+============================================================
+8. NUMPY COMPATIBILITY
+============================================================
+PythonUltra contains a compact calculator-focused NumPy compatibility package.
+It is not the full desktop NumPy package.
+
+Matrix example:
+  import numpy as np
+  m = np.matrix([[1,2],[3,4]])
+  print(m)
+  print(m.T)
+  print(m.I)
+
+Aliases/features include:
+- np.matrix
+- np.mat
+- np.asmatrix
+- .T transpose
+- .H conjugate-transpose style compatibility
+- .I inverse
+- .A and .A1
+- matrix multiplication with * and @
+- matrix powers including inverse with ** -1
+
+Vector/math helpers include:
+- array
+- cross
+- dot
+- lerp
+- matmul
+- norm
+- normalize
+- zeros / ones / full
+- identity / eye
+- arange / linspace
+- reshape / transpose / concatenate
+- sqrt / sin / cos / tan
+- sum / mean / amin / amax
+
+The native accelerator is private (_numpy_fast) so it does not shadow the
+public numpy package and numpy.matrix remains available.
+
+============================================================
+9. PYGAME / GAME DEVELOPMENT
+============================================================
+PythonUltra contains a compact Pygame compatibility layer for the fx-CG50.
+Important features include:
+- Surface / Rect / Color
+- display update
+- line/rectangle/polygon/circle/ellipse/arc drawing
+- key events and pressed-key state
+- pygame.time.Clock
+- text/font support
+- uncompressed BMP/PPM image loading
+- scale/flip/rotation
+- sprites/groups/collision helpers
+
+Calculator-loaded game images should stay at or below the established 56x56
+hardware-safe image size.
+
+No desktop SDL audio/network stack is included.
+
+============================================================
+10. PY3D
+============================================================
+PythonUltra includes the py3d software 3D foundation.
+
+Features include:
+- vectors
+- 4x4 matrices
+- translation/scaling/rotation
+- perspective projection
+- RGB565 lighting helpers
+- mesh triangle preparation
+- back-face culling
+- painter depth sorting
+- native gint.dtriangle filled triangles
+- cube helper and Renderer class
+
+This is a compact software renderer for calculator hardware, not OpenGL.
+
+============================================================
+11. OTHER MODULES / FEATURES
+============================================================
+Included or extended functionality includes:
+- json
+- os filesystem operations
+- sys/path/argv support
+- random
+- time
+- math
+- io
+- struct
+- collections
+- ctypes safe compatibility layer
+- gint
+- casioplot
+- kandinsky
+- ion
+- dtriangle native filled-triangle rasterizer
+
+Use F3 CATALOG to browse the curated public modules and useful methods.
+Internal/private implementation names are intentionally hidden from the
+catalog where possible.
+
+============================================================
+12. HELP AND INFO
+============================================================
+Python help:
+  help()
+  help(object)
+  help('modules')
+
+Terminal manual:
+  help
+  man COMMAND
+  COMMAND -h
+  COMMAND --help
+
+F3 opens the graphical module/method catalog.
+
+EXE or a numbered shortcut selects a member and inserts its qualified name
+at the current cursor (for example numpy.array; builtins insert as print).
+It does not execute code, erase the input line, add arguments or add imports.
+Import the module in your Python program/REPL as needed. EXIT cancels.
+The terminal "modules" command also returns the selection to the input line.
+F6 opens build and collaboration information.
+
+============================================================
+13. THEMES AND FONTS
+============================================================
+F4 toggles the main shell theme.
+PythonUltra Files and the editor also support dark/light palettes.
+The editor provides additional syntax themes listed above.
+
+Terminal font commands:
+  font small
+  font normal
+  font large
+
+Persistent configuration can be placed in /.pythonultrarc, for example:
+  set theme=dark
+  set font=normal
+
+============================================================
+14. HARDWARE TEST CHECKLIST
+============================================================
+After installing a new G3A, test these first:
+
+A. NumPy matrix
+  import numpy as np
+  m=np.matrix([[1,2],[3,4]])
+  print(m)
+  print(m.T)
+  print(m.I)
+
+B. Terminal
+  pwd
+  ls
+  mkdir testdir
+  cd testdir
+  touch test.txt
+  ls -l
+  cd ..
+  rmdir testdir   (only after removing contained files)
+
+C. Permissions and execution
+  touch perm_test.txt
+  chmod 444 perm_test.txt
+  ls -l perm_test.txt
+  chmod 644 perm_test.txt
+
+D. Python arguments
+  create argv_test.py containing:
+    import sys
+    print(sys.argv)
+  then run:
+    python argv_test.py one two
+
+E. UI / fonts / symbols
+  F3 Catalog
+  F4 Theme
+  F5 Editor
+  F6 Info
+  UP/DOWN command history
+  font small / normal / large
+  SHIFT+DEL symbol picker
+  insert: ' " : ; , - . @ # ( ) [ ] { }
+
+Editor corrections (September 12, 2026)
+  F6 Sym opens the programming-symbol picker.
+  SHIFT+VARS opens Style (syntax theme or font/size).
+  ALPHA enables lowercase letters; SHIFT reverses the next letter's case.
+  The a/A status indicator shows the case that will actually be inserted.
+  SHIFT+ALPHA locks uppercase; ALPHA switches back to numeric input.
+  In alpha mode the shifted number-row keys still type their printed letters.
+  Use numeric mode for SHIFT+8 selection, SHIFT+9 paste and SHIFT+4 Catalog.
+  SHIFT+DEL remains an alternative symbol shortcut.
+  Held arrows/delete repeat; release stops movement without replaying a backlog.
+
+Dark mode
+  Terminal, editor, Files and dialogs use black canvases/background bars.
+  Catalog, Info and Symbols also clear the area outside their frames to black.
+  Menu border/accents still follow the RC color and selection stays visible.
+  Light mode retains light backgrounds. User graphics keep their chosen colors.
+
+Color-key motion demo
+  Use the corrected colorkey_motion.py shipped with this candidate. The first
+  run131 demo imported gint inside the frame loop, which clears VRAM on this
+  MicroPython port and caused the observed white screen. Keep imports before
+  drawing. F1 toggles transparency; EXIT quits. Test your original game too.
+
+F. RC and history
+  history 10
+  rc show
+  alias ll='ls -l'
+  source /.pythonultrarc
+
+G. Files
+  create .py and .txt files
+  edit them
+  rename them
+  delete them
+  create/remove a folder
+
+H. ZIP
+  create a small folder/file
+  zip test.zip source
+  unzip test.zip extracted
+
+============================================================
+15. PROJECT STATUS
+============================================================
+This guide describes the feature set targeted by the current PythonUltra
+cg50-new-display development build. Automated build/regression tests validate
+the compiled add-in, but actual fx-CG50 hardware testing remains the final
+validation for UI, memory use and calculator-specific behavior.

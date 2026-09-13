@@ -20,7 +20,7 @@ void pe_debug_panic(char const *msg)
     int dy = dfont_default()->line_height + 2;
 
     dclear(C_BLACK);
-    dtext(1, 1, C_WHITE, "PythonExtra panic!");
+    dtext(1, 1, C_WHITE, "PythonUltra panic!");
     dtext(1, 1+dy, C_WHITE, msg);
     dupdate();
 
@@ -55,8 +55,7 @@ void pe_debug_get_meminfo(struct pe_debug_meminfo *info)
         info->_uram_free = s->free_memory;
     }
 
-    s = kmalloc_get_gint_stats(kmalloc_get_arena(
-        gint[HWCALC] == HWCALC_FXCG100 ? "_ld1":  "_ostk"));
+    s = kmalloc_get_gint_stats(kmalloc_get_arena("_ostk"));
     if(s) {
         info->_ostk_used = s->used_memory;
         info->_ostk_free = s->free_memory;
@@ -114,7 +113,7 @@ void pe_debug_browse_meminfo(void)
         "main", "console", "upy", "prompt", "ui",
         "now", /* extra element compared to original enum */
     };
-    char const *arena2 = (gint[HWCALC] == HWCALC_FXCG100 ? "_ld1":  "_ostk");
+    char const *arena2 = "_ostk";
 
     dtext(1, 1, C_BLACK, "Memory info");
     dtext(83, 24, C_BLACK, "_uram");

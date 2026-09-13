@@ -163,25 +163,19 @@ static mp_obj_t ion_keydown(mp_obj_t arg1) {
 /* The following function are coming from the Upsilon extension of NW Ion methods */
 
 static mp_obj_t ion_battery( void ) {
-  if (gint[HWCALC] != HWCALC_FXCG100) {
-    int voltage = (int)gint_world_switch(
-      GINT_CALL(CASIOWIN_GetMainBatteryVoltage, 1));
-    float value = ((float) voltage) / 100.0f;
-    return mp_obj_new_float( value );
-  }
-  else return mp_obj_new_float( 0.0f );
+  int voltage = (int)gint_world_switch(
+    GINT_CALL(CASIOWIN_GetMainBatteryVoltage, 1));
+  float value = ((float) voltage) / 100.0f;
+  return mp_obj_new_float( value );
 }
 
 static mp_obj_t ion_battery_level( void ) {
-  if (gint[HWCALC] != HWCALC_FXCG100) {
-    int voltage = (int)gint_world_switch(
-      GINT_CALL(CASIOWIN_GetMainBatteryVoltage, 1));
-    if (voltage>=0 && voltage<=360) return mp_obj_new_int(0);
-    else if (voltage>360 && voltage<=370) return mp_obj_new_int(1);
-    else if (voltage>370 && voltage<=380) return mp_obj_new_int(2);
-    else return mp_obj_new_int(3);
-  }
-  else return mp_obj_new_int(0);
+  int voltage = (int)gint_world_switch(
+    GINT_CALL(CASIOWIN_GetMainBatteryVoltage, 1));
+  if (voltage>=0 && voltage<=360) return mp_obj_new_int(0);
+  else if (voltage>360 && voltage<=370) return mp_obj_new_int(1);
+  else if (voltage>370 && voltage<=380) return mp_obj_new_int(2);
+  else return mp_obj_new_int(3);
 }
 
 static mp_obj_t ion_battery_charging( void ) {
@@ -202,23 +196,18 @@ static mp_obj_t ion_get_keys( void ) {
 }
 
 static mp_obj_t ion_set_brightness(mp_obj_t arg1) {
-  if (gint[HWCALC] != HWCALC_FXCG100) {
-    mp_int_t level = mp_obj_get_int(arg1);
+  mp_int_t level = mp_obj_get_int(arg1);
 
-    if (level<0) level=0;
-    else if (level>240) level=240;
+  if (level<0) level=0;
+  else if (level>240) level=240;
 
-    r61524_set(0x5a1, (level & 0xff) + 6);
-  }
+  r61524_set(0x5a1, (level & 0xff) + 6);
   return mp_const_none;
 }
 
 static mp_obj_t ion_get_brightness( void ) {
-  if (gint[HWCALC] != HWCALC_FXCG100) {
-      mp_int_t level = r61524_get(0x5a1);
-      return mp_obj_new_int( level );
-  }
-  else return mp_obj_new_int( 0 );
+  mp_int_t level = r61524_get(0x5a1);
+  return mp_obj_new_int( level );
 }
 
 MP_DEFINE_CONST_FUN_OBJ_1(ion_keydown_obj, ion_keydown);
