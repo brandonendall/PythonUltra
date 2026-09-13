@@ -11,7 +11,7 @@ import time as _pytime
 import gint as _gint
 
 
-__version__ = "0.1.0-cg50"
+__version__ = "0.1.1-cg50"
 
 
 class error(Exception):
@@ -674,9 +674,12 @@ class Surface:
         else:
             dx, dy = int(dest[0]), int(dest[1])
         src = Rect(0, 0, source._w, source._h) if area is None else Rect(area)
-        src = src.clip((0, 0, source._w, source._h))
-        result = Rect(dx, dy, src.w, src.h).clip((0, 0, self._w, self._h))
-        if src.w <= 0 or src.h <= 0:
+        bounded = src.clip((0, 0, source._w, source._h))
+        dx += bounded.x - src.x
+        dy += bounded.y - src.y
+        src = bounded
+        result = Rect(dx, dy, src.w, src.h).clip(self._clip)
+        if src.w <= 0 or src.h <= 0 or result.w <= 0 or result.h <= 0:
             return result
 
         if self._screen and source._text is not None:
@@ -686,22 +689,27 @@ class Surface:
             _gint.dtext(dx, dy, source._text_color, source._text)
             return result
 
-        if self._screen and source._image is not None and source._colorkey is None:
-            if area is None:
-                _gint.dimage(dx, dy, source._image)
-            else:
+        # Crop once before either native drawing or software composition.
+        src.x += result.x - dx
+        src.y += result.y - dy
+        src.w, src.h = result.w, result.h
+        dx, dy = result.x, result.y
+        if self._screen and source._image is not None:
+            if source._colorkey is None:
                 _gint.dsubimage(dx, dy, source._image, src.x, src.y, src.w, src.h)
-            return result
+                return result
+            native_key_blit = getattr(_gint, "dsubimage_colorkey", None)
+            if native_key_blit is not None and getattr(source._image, "format", -1) == 0:
+                # One native call, with no copied image or stale key cache.
+                native_key_blit(dx, dy, source._image, src.x, src.y,
+                                src.w, src.h, source._colorkey)
+                return result
 
         # Software copy supports off-screen composition and display snapshots.
         for sy in range(src.h):
             ty = dy + sy
-            if ty < 0 or ty >= self._h:
-                continue
             for sx in range(src.w):
                 tx = dx + sx
-                if tx < 0 or tx >= self._w:
-                    continue
                 color = source._get565(src.x + sx, src.y + sy)
                 if source._colorkey is None or color != source._colorkey:
                     self._put565(tx, ty, color)
@@ -1531,6 +1539,8 @@ class _Transform:
     def scale(self, surface, size, dest_surface=None):
         width, height = map(int, size)
         result = dest_surface if dest_surface is not None else Surface((width, height), surface._flags)
+        result._colorkey = surface._colorkey
+        result._alpha = surface._alpha
         for y in range(height):
             source_y = y * surface._h // height
             for x in range(width):
@@ -1550,6 +1560,8 @@ class _Transform:
 
     def flip(self, surface, flip_x, flip_y):
         result = Surface(surface.get_size(), surface._flags)
+        result._colorkey = surface._colorkey
+        result._alpha = surface._alpha
         for y in range(surface._h):
             sy = surface._h - 1 - y if flip_y else y
             for x in range(surface._w):
@@ -1563,6 +1575,10 @@ class _Transform:
         width = max(1, int(abs(surface._w * cosine) + abs(surface._h * sine)))
         height = max(1, int(abs(surface._w * sine) + abs(surface._h * cosine)))
         result = Surface((width, height), surface._flags)
+        result._colorkey = surface._colorkey
+        result._alpha = surface._alpha
+        if surface._colorkey is not None:
+            result.fill(surface._colorkey)
         source_cx, source_cy = (surface._w - 1) / 2, (surface._h - 1) / 2
         target_cx, target_cy = (width - 1) / 2, (height - 1) / 2
         for y in range(height):

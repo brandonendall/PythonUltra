@@ -198,6 +198,7 @@ static void pe_run_shell_shortcut(char const *code)
 
     jwidget_set_background(PE.shell, background);
     widget_shell_set_text_color(PE.shell, foreground);
+    jwidget_set_background(PE.scene, background);
     jwidget_set_background(PE.title, pe_dark_mode ? C_BLACK : C_WHITE);
     jlabel_set_text_color(PE.title, pe_dark_mode ? C_WHITE : C_BLACK);
     PE.scene->widget.update = true;

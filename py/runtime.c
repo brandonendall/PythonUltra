@@ -42,6 +42,7 @@
  #include "py/smallint.h"
  #include "py/stream.h"
  #include "py/runtime.h"
+#include "py/objdoc.h"
  #include "py/builtin.h"
  #include "py/cstack.h"
  #include "py/gc.h"
@@ -1123,6 +1124,26 @@
  
  #endif // MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG
  
+ #ifdef MICROPY_PY_DOC_TABLE
+ mp_obj_t mp_obj_doc_unwrap(mp_obj_t obj, mp_obj_t *owner) {
+     if (mp_obj_is_type(obj, &mp_type_bound_meth)) {
+         obj = mp_obj_bound_meth_unwrap(obj, owner);
+     }
+     #if MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG
+     if (mp_obj_is_type(obj, &mp_type_checked_fun)) {
+         mp_obj_checked_fun_t *checked = MP_OBJ_TO_PTR(obj);
+         *owner = MP_OBJ_FROM_PTR(checked->type);
+         obj = checked->fun;
+     }
+     #endif
+     if (mp_obj_is_type(obj, &mp_type_staticmethod)
+         || mp_obj_is_type(obj, &mp_type_classmethod)) {
+         obj = ((mp_obj_static_class_method_t *)MP_OBJ_TO_PTR(obj))->fun;
+     }
+     return obj;
+ }
+ #endif
+
  // Given a member that was extracted from an instance, convert it correctly
  // and put the result in the dest[] array for a possible method call.
  // Conversion means dealing with static/class methods, callables, and values.
@@ -1187,6 +1208,19 @@
  // normal attribute found, returns: dest[0] == <attribute>, dest[1] == MP_OBJ_NULL
  // method attribute found, returns: dest[0] == <method>,    dest[1] == <self>
  void mp_load_method_maybe(mp_obj_t obj, qstr attr, mp_obj_t *dest) {
+     #ifdef MICROPY_PY_DOC_TABLE
+     // The registry reads dictionaries directly and cannot invoke import or
+     // user attribute hooks. Keep normal lookups unchanged for unknown objects.
+     if (attr == MP_QSTR___doc__) {
+         mp_obj_t doc = mp_obj_doc_get(obj);
+         if (doc != MP_OBJ_NULL) {
+             dest[0] = doc;
+             dest[1] = MP_OBJ_NULL;
+             return;
+         }
+     }
+     #endif
+
      // clear output to indicate no attribute/method found yet
      dest[0] = MP_OBJ_NULL;
      dest[1] = MP_OBJ_NULL;

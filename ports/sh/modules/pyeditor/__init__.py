@@ -11,7 +11,7 @@ import time
 import pyperm
 import errno
 
-__version__ = "0.3.0-cg50"
+__version__ = "0.3.1-cg50"
 
 # Build patch stages use this marker to leave this canonical implementation
 # intact instead of replaying older editor string-replacement patches.
@@ -44,7 +44,7 @@ MAX_ROWS = max(1, BODY_H // FONT_H)
 MAX_COLS = max(4, (SCREEN_W - TEXT_X) // FONT_W)
 
 THEMES = {
-    "GitHub Dark": (0x1082, 0xD69A, 0x18E3, 0xD69A, 0x2148, 0xFFFF, 0xFF7B, 0x7D7C, 0x79FF, 0xA59D, 0x8C71, 0xD39F, 0xFFA6, 0x3186),
+    "GitHub Dark": (0x0000, 0xD69A, 0x0000, 0xD69A, 0x2148, 0xFFFF, 0xFF7B, 0x7D7C, 0x79FF, 0xA59D, 0x8C71, 0xD39F, 0xFFA6, 0x3186),
     "GitHub Light": (0xFFFF, 0x18E3, 0xF7BE, 0x18E3, 0xBDF7, 0x0000, 0xA00F, 0x06B9, 0x045F, 0x0863, 0x6B6D, 0x7A6D, 0x9A63, 0xD69A),
     "Linux Terminal": (0x0000, 0xC618, 0x0000, 0x07E0, 0x03E0, 0x0000, 0xFFE0, 0x07FF, 0xF81F, 0x07E0, 0x8410, 0xFBE0, 0x07FF, 0x4208),
     "PythonUltra Dark": (0x0000, 0xFFFF, 0x0000, 0xC618, 0x07FF, 0x0000, 0xE004, 0x041F, 0xFB44, 0x8430, 0xF8F9, 0x7B5F, 0xBF3A, 0x528A),
@@ -124,17 +124,35 @@ def _unused_filename(filename):
     raise OSError("No unused filename")
 
 
-def _raw_key(g):
-    """Read physical key events without rewriting the shared key transform."""
-    while True:
-        ev = g.pollevent()
-        if ev.type == g.KEYEV_DOWN:
-            return ev.key
-        if ev.type == g.KEYEV_HOLD and ev.key in (
-            g.KEY_UP, g.KEY_DOWN, g.KEY_LEFT, g.KEY_RIGHT, g.KEY_DEL
-        ):
-            return ev.key
-        time.sleep(0.01)
+class _KeyReader:
+    """Drain releases before acting on repeats; preserve real presses in order."""
+    def __init__(self, g):
+        self.g = g
+        self.pending = []
+        self.repeat_keys = (g.KEY_UP, g.KEY_DOWN, g.KEY_LEFT, g.KEY_RIGHT, g.KEY_DEL)
+
+    def read(self):
+        g = self.g
+        while True:
+            repeat = None
+            while True:
+                ev = g.pollevent()
+                if ev.type == g.KEYEV_NONE:
+                    break
+                if ev.type == g.KEYEV_DOWN:
+                    self.pending.append(ev.key)
+                    repeat = None
+                elif ev.type == g.KEYEV_HOLD and ev.key in self.repeat_keys:
+                    repeat = ev.key
+                elif ev.type == g.KEYEV_UP and ev.key == repeat:
+                    repeat = None
+            if self.pending:
+                return self.pending.pop(0)
+            # keydown() reflects processed events, so it is only current after
+            # draining the queue. Coalesce a backlog to at most one movement.
+            if repeat is not None and g.keydown(repeat):
+                return repeat
+            time.sleep(0.01)
 
 
 def _maps(g):
@@ -153,6 +171,7 @@ def _maps(g):
 class Editor:
     def __init__(self, filename="new.py", theme=DEFAULT_THEME):
         self.g = _gint()
+        self._keys = _KeyReader(self.g)
         self.base_map, self.alpha_map, self.shift_map = _maps(self.g)
         self.filename = str(filename or "new.py")
         self.lines = [""]
@@ -249,14 +268,19 @@ class Editor:
         return text[low:]
 
     def resolve_char(self, key):
-        if self.shift_active and key in self.shift_map:
-            return self.shift_map[key]
         if self.alpha_mode:
             char = self.alpha_map.get(key, self.base_map.get(key))
-            if char and self.alpha_mode == 2:
+            if char and ((self.alpha_mode == 2) != self.shift_active):
                 return char.upper()
             return char
+        if self.shift_active and key in self.shift_map:
+            return self.shift_map[key]
         return self.base_map.get(key)
+
+    def _input_mode(self):
+        if self.alpha_mode:
+            return "A" if ((self.alpha_mode == 2) != self.shift_active) else "a"
+        return "S" if self.shift_active else "1"
 
     def _reset_view(self):
         self.cx = 0
@@ -509,13 +533,13 @@ class Editor:
         self._select_ui_font()
         g.drect(0, y_info, SCREEN_W - 1, y_nav - 1, palette[BG])
         g.drect(0, y_nav, SCREEN_W - 1, SCREEN_H - 1, palette[BAR])
-        mode = "A" if self.alpha_mode == 2 else ("a" if self.alpha_mode else "1")
+        mode = self._input_mode()
         changed = "*" if self.dirty else ""
         info = "%s [%s] %d:%d %s%s %s" % (
             self.mode, mode, self.cy + 1, self.cx + 1,
             self.filename, changed, self.msg)
         g.dtext(2, y_info + 1, palette[FG], self._fit_text(info, SCREEN_W - 4))
-        labels = ("Run", "Save", "New", "Open", "Find", "Style")
+        labels = ("Run", "Save", "New", "Open", "Find", "Sym")
         for index, label in enumerate(labels):
             x1 = index * 66
             x2 = SCREEN_W - 1 if index == 5 else x1 + 65
@@ -565,7 +589,7 @@ class Editor:
                     g.dtext(10, y + 2, color, text)
                 g.dtext(4, SCREEN_H - 12, palette[FG], "EXE select   EXIT cancel")
                 g.dupdate()
-                key = _raw_key(g)
+                key = self._keys.read()
                 if key == g.KEY_UP:
                     selected = (selected - 1) % len(items)
                 elif key == g.KEY_DOWN:
@@ -593,7 +617,7 @@ class Editor:
                 shown = self._fit_tail(text + "_", 340)
                 g.dtext(28, 101, palette[FG], shown)
                 g.dupdate()
-                key = _raw_key(g)
+                key = self._keys.read()
                 if key == g.KEY_EXIT:
                     return None
                 if key == g.KEY_EXE:
@@ -605,14 +629,18 @@ class Editor:
                     self.alpha_mode = 2 if self.shift_active else (0 if self.alpha_mode else 1)
                     self.shift_active = False
                     continue
+                if key == g.KEY_F6 or (self.shift_active and key == g.KEY_DEL):
+                    self.shift_active = False
+                    symbol = self.popup("Symbols", SYMBOLS)
+                    if symbol:
+                        text += symbol
+                    continue
+                if self.shift_active and key == g.KEY_VARS:
+                    self.shift_active = False
+                    self.style_menu()
+                    continue
                 if key == g.KEY_DEL:
-                    if self.shift_active:
-                        symbol = self.popup("Symbols", SYMBOLS)
-                        if symbol:
-                            text += symbol
-                        self.shift_active = False
-                    else:
-                        text = text[:-1]
+                    text = text[:-1]
                     continue
                 char = self.resolve_char(key)
                 if char:
@@ -820,10 +848,13 @@ class Editor:
         # Drain the JustUI launcher's release/modifier tail before taking over
         # the global keyboard event queue.
         g.clearevents()
+        self._keys.pending[:] = []
         try:
             while True:
                 self.draw()
-                key = _raw_key(g)
+                key = self._keys.read()
+                if key in (g.KEY_F1, g.KEY_F2, g.KEY_F3, g.KEY_F4, g.KEY_F5):
+                    self.shift_active = False
                 if key == g.KEY_F1:
                     if self.run_code():
                         return "run"
@@ -848,7 +879,11 @@ class Editor:
                     self.find()
                     continue
                 if key == g.KEY_F6:
-                    self.style_menu()
+                    self.shift_active = False
+                    symbol = self.popup("Symbols", SYMBOLS)
+                    if symbol:
+                        self.insert(symbol)
+                        self.mode = "INSERT"
                     continue
                 if key == g.KEY_SHIFT:
                     self.shift_active = not self.shift_active
@@ -858,16 +893,20 @@ class Editor:
                     self.shift_active = False
                     continue
                 if self.shift_active:
-                    if key == g.KEY_8:
+                    if key == g.KEY_VARS:
+                        self.shift_active = False
+                        self.style_menu()
+                        continue
+                    if not self.alpha_mode and key == g.KEY_8:
                         self.mode = "VISUAL"
                         self.sel_start = (self.cy, self.cx)
                         self.shift_active = False
                         continue
-                    if key == g.KEY_9:
+                    if not self.alpha_mode and key == g.KEY_9:
                         self.insert(self.clipboard)
                         self.shift_active = False
                         continue
-                    if key == g.KEY_4:
+                    if not self.alpha_mode and key == g.KEY_4:
                         self.catalog_menu()
                         self.shift_active = False
                         continue

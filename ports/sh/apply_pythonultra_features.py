@@ -489,6 +489,17 @@ bool widget_shell_poly_event(void *s0, jevent e)
 def patch_main():
     return patch(MAIN, [
         (
+            '''void pe_draw(void)
+{
+    dclear(C_WHITE);
+''',
+            '''void pe_draw(void)
+{
+    dclear(pe_dark_mode ? C_BLACK : C_WHITE);
+''',
+            "theme-aware full-screen canvas",
+        ),
+        (
             '''struct pe_globals PE = { 0 };
 
 

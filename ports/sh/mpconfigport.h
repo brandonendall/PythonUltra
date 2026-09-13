@@ -135,3 +135,9 @@ typedef long mp_off_t;
 #define MICROPY_HW_MCU_NAME   "sh-4a"
 
 #define MP_STATE_PORT MP_STATE_VM
+
+/* The shared module reference stays in ROM; only help/__doc__ reads it.
+   Runtime bytecode and the .mpy format are unchanged. */
+#if defined(FXCG50)
+#define MICROPY_PY_DOC_TABLE "ports/sh/module_docs.h"
+#endif

@@ -23,6 +23,7 @@ ifneq ($(PYTHONULTRA_RUNTIME_PREPARED),1)
 	python3 ../sh/apply_pythonultra_permissions.py
 	python3 ../sh/apply_pythonultra_ui3_compat.py
 	python3 ../sh/apply_pythonultra_symbols.py
+	python3 ../../tools/pythonultra_docs.py --output ../../build-module-docs/reference --runtime-header ../sh/module_docs.h
 endif
 	python3 -m py_compile \
 		../sh/modules/pythonultra/__init__.py \
@@ -33,6 +34,7 @@ endif
 		../sh/modules/zipfile/__init__.py
 	python3 ../../tests/ports/sh/pygame_compat.py
 	python3 ../../tests/ports/sh/pygame_cg50_regression.py
+	python3 ../../tests/ports/sh/pygame_colorkey.py
 	python3 ../../tests/ports/sh/numpy_compat.py
 	python3 ../../tests/ports/sh/py3d_compat.py
 	python3 ../../tests/ports/sh/pyeditor_regression.py
@@ -52,7 +54,6 @@ ICONS_RELEASE := --icon-uns=icon-uns.png --icon-sel=icon-sel.png
 ICONS_DEV := --icon-uns=icon-uns-dev.png --icon-sel=icon-sel-dev.png
 
 PythonUltra.g3a: $(BUILD)/firmware.bin
-	python3 blacken_icon.py
 	fxgxa --g3a -n PythonUltra $(ICONS_$(BUILDTYPE)) $< -o $@
 
 send: all

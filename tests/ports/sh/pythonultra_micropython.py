@@ -59,4 +59,22 @@ with open(source) as check:
     assert check.read() == "headone\ntwo\nthreeTAIL"
 assert not editor.load_file(root + "/absent.txt")
 assert editor.lines == ["headone", "two", "threeTAIL"]
+g = sys.modules['gint']
+g.KEYEV_NONE, g.KEYEV_DOWN, g.KEYEV_UP, g.KEYEV_HOLD = 0, 1, 2, 3
+class Event:
+    def __init__(self, kind, key):
+        self.type, self.key = kind, key
+events = [Event(g.KEYEV_DOWN, g.KEY_RIGHT)] + [
+    Event(g.KEYEV_HOLD, g.KEY_RIGHT) for _ in range(30)
+] + [Event(g.KEYEV_UP, g.KEY_RIGHT), Event(g.KEYEV_DOWN, g.KEY_LOG)]
+def poll():
+    return events.pop(0) if events else Event(g.KEYEV_NONE, 0)
+g.pollevent = poll
+g.keydown = lambda key: False
+assert editor._keys.read() == g.KEY_RIGHT
+assert editor._keys.read() == g.KEY_LOG
+editor.alpha_mode, editor.shift_active = 1, True
+assert editor.resolve_char(g.KEY_LOG) == 'B'
+assert editor.resolve_char(g.KEY_MUL) == 'S'
+assert editor._input_mode() == 'A'
 print("Real MicroPython ZIP/editor/RC/Catalog smoke passed")

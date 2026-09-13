@@ -431,6 +431,29 @@ E. UI / fonts / symbols
   SHIFT+DEL symbol picker
   insert: ' " : ; , - . @ # ( ) [ ] { }
 
+Editor corrections (September 12, 2026)
+  F6 Sym opens the programming-symbol picker.
+  SHIFT+VARS opens Style (syntax theme or font/size).
+  ALPHA enables lowercase letters; SHIFT reverses the next letter's case.
+  The a/A status indicator shows the case that will actually be inserted.
+  SHIFT+ALPHA locks uppercase; ALPHA switches back to numeric input.
+  In alpha mode the shifted number-row keys still type their printed letters.
+  Use numeric mode for SHIFT+8 selection, SHIFT+9 paste and SHIFT+4 Catalog.
+  SHIFT+DEL remains an alternative symbol shortcut.
+  Held arrows/delete repeat; release stops movement without replaying a backlog.
+
+Dark mode
+  Terminal, editor, Files and dialogs use black canvases/background bars.
+  Catalog, Info and Symbols also clear the area outside their frames to black.
+  Menu border/accents still follow the RC color and selection stays visible.
+  Light mode retains light backgrounds. User graphics keep their chosen colors.
+
+Color-key motion demo
+  Use the corrected colorkey_motion.py shipped with this candidate. The first
+  run131 demo imported gint inside the frame loop, which clears VRAM on this
+  MicroPython port and caused the observed white screen. Keep imports before
+  drawing. F1 toggles transparency; EXIT quits. Test your original game too.
+
 F. RC and history
   history 10
   rc show

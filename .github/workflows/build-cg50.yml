@@ -10,6 +10,9 @@ on:
       - "extmod/**"
       - "shared/**"
       - "tests/**"
+      - "tools/pythonultra_doc*"
+      - "docs/library/**"
+      - "logo/run130-1-icon.png"
       - ".github/workflows/build-cg50.yml"
   workflow_dispatch:
 
@@ -36,28 +39,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          # The logo was added to main after this compatibility branch was
-          # created, so import that exact repository asset for the build.
-          git fetch origin main --no-tags
-          mkdir -p logo
-          git show FETCH_HEAD:logo/logo.jpg > logo/logo.jpg
-
           python3 - <<'PY'
           from pathlib import Path
-          from PIL import Image, ImageOps
+          from PIL import Image
+          import shutil
 
-          source = Path("logo/logo.jpg")
+          # Exact pixels recovered from the user's supplied run130.1 binary.
+          source = Path("logo/run130-1-icon.png")
           out_dir = Path("ports/fxcg50")
           size = (92, 64)
 
           image = Image.open(source).convert("RGB")
-          image = ImageOps.contain(image, size, Image.Resampling.LANCZOS)
-
-          # Preserve the full logo and force a true black app-icon background.
-          background = Image.new("RGB", size, (0, 0, 0))
-          x = (size[0] - image.width) // 2
-          y = (size[1] - image.height) // 2
-          background.paste(image, (x, y))
+          assert image.size == size, "Reference icon must be 92x64"
 
           for name in (
               "icon-uns.png",
@@ -65,7 +58,7 @@ jobs:
               "icon-uns-dev.png",
               "icon-sel-dev.png",
           ):
-              background.save(out_dir / name, "PNG")
+              shutil.copyfile(source, out_dir / name)
 
           # Regression check: all four outer corners must be black.
           for name in ("icon-uns.png", "icon-sel.png", "icon-uns-dev.png", "icon-sel-dev.png"):
@@ -75,7 +68,7 @@ jobs:
               if any(pixel != (0, 0, 0) for pixel in corners):
                   raise SystemExit("Icon background regression: " + name)
 
-          print(f"Prepared black-background G3A icon from {source}: {size[0]}x{size[1]}")
+          print(f"Preserved supplied G3A icon from {source}: {size[0]}x{size[1]}")
           PY
 
       - name: Restore fxSDK toolchain cache
@@ -234,13 +227,18 @@ jobs:
         shell: bash
         run: python3 tests/ports/sh/pygame_compat.py
 
+      - name: Test runtime documentation in MicroPython
+        run: |
+          # Source preparation scripts compose in order; run the sequence once.
+          make -C ports/fxcg50 pythonultra-runtime-fixes
+          python3 tests/ports/sh/runtime_docs_host.py --prepared
+
       - name: Build PythonUltra for fx-CG50
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.local/bin:$PATH"
-          # Finish source-generation patches before parallel QSTR/compile work.
-          make -C ports/fxcg50 pythonultra-runtime-fixes
+          # Source preparation and documentation tests completed above.
           make -C ports/fxcg50 -j2 PYTHONULTRA_RUNTIME_PREPARED=1
 
       - name: Smoke-check G3A and REPL surface
@@ -264,7 +262,9 @@ jobs:
               b"numpy": "compact numeric module",
               b"matrix": "NumPy matrix compatibility",
               b"pygame": "pygame compatibility package",
+              b"dsubimage_colorkey": "native color-key sprite drawing",
               b"py3d": "software 3D package",
+              b"vec3(x=0.0, y=0.0, z=0.0)": "ROM-backed runtime documentation",
               b"pyeditor": "text editor",
               b"pyfiles": "file manager",
               b"pyterm": "terminal command layer",
@@ -280,6 +280,9 @@ jobs:
           for label in required.values():
               print(f"  present: {label}")
           PY
+
+      - name: Generate module reference for this build
+        run: python3 tools/pythonultra_docs.py --output build-module-docs/reference
 
       - name: Prepare numbered download
         shell: bash
@@ -299,4 +302,6 @@ jobs:
             ports/fxcg50/PythonUltra-CG50-run*.g3a
             ports/sh/PythonUltra_User_Guide.txt
             build-info/
+            build-module-docs/PythonUltra-Module-Documentation.zip
+            ports/sh/examples/colorkey_motion.py
           if-no-files-found: error

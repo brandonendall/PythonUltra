@@ -29,7 +29,8 @@ def reload_from(path):
 with tempfile.TemporaryDirectory() as temp_root:
     root = Path(temp_root)
 
-    # Missing RC creates a template and defaults to Files.
+    # Preserve PythonUltra's Files startup default. Missing/invalid startup in an existing
+    # RC still falls back to Files; an explicit RC selection wins.
     missing = root / "default.rc"
     assert reload_from(missing) == 1
     assert "set startup=files" in missing.read_text(encoding="utf-8")

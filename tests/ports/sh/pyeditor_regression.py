@@ -57,12 +57,17 @@ class FakeGint(types.ModuleType):
             setattr(self, name, value)
         self.KEYEV_DOWN = 1
         self.KEYEV_HOLD = 2
+        self.KEYEV_NONE = 0
+        self.KEYEV_UP = 3
+        self.down = set()
+        self.idle_polls = 0
         self.events = []
         self.current_font = "small"
         self.drawn_text = []
         self.font_calls = []
         self.default_font_restores = 0
         self.clear_count = 0
+        self.backgrounds = []
 
     def dfont_builtin(self, name):
         self.current_font = name
@@ -96,7 +101,7 @@ class FakeGint(types.ModuleType):
         self.drawn_text.append((self.current_font, x, y, str(text)))
 
     def dclear(self, color):
-        pass
+        self.backgrounds.append(color)
 
     def drect(self, *args):
         pass
@@ -112,8 +117,19 @@ class FakeGint(types.ModuleType):
 
     def pollevent(self):
         if not self.events:
-            raise AssertionError("test exhausted fake key events")
-        return self.events.pop(0)
+            self.idle_polls += 1
+            assert self.idle_polls < 20, "test exhausted fake key events"
+            return Event(self.KEYEV_NONE, 0)
+        self.idle_polls = 0
+        event = self.events.pop(0)
+        if event.type == self.KEYEV_DOWN:
+            self.down.add(event.key)
+        elif event.type == self.KEYEV_UP:
+            self.down.discard(event.key)
+        return event
+
+    def keydown(self, key):
+        return key in self.down
 
 
 fake_permissions = FakePermissions()
@@ -250,6 +266,71 @@ with tempfile.TemporaryDirectory() as temp_root:
         fake_gint.KEY_ALPHA, fake_gint.KEY_LOG, fake_gint.KEY_ALPHA,
         fake_gint.KEY_SHIFT, fake_gint.KEY_ADD, fake_gint.KEY_EXE)]
     assert editor.input_bar("Test") == "aB["
+
+    # A slow redraw may accumulate many repeats before the release. Drain
+    # them before moving, but retain subsequent real typing in exact order.
+    g = fake_gint
+    reader = editor_module._KeyReader(g)
+    g.events[:] = [Event(g.KEYEV_DOWN, g.KEY_RIGHT)] + [
+        Event(g.KEYEV_HOLD, g.KEY_RIGHT) for _ in range(30)
+    ] + [Event(g.KEYEV_UP, g.KEY_RIGHT), Event(g.KEYEV_DOWN, g.KEY_XOT),
+         Event(g.KEYEV_DOWN, g.KEY_LOG)]
+    assert [reader.read(), reader.read(), reader.read()] == [g.KEY_RIGHT, g.KEY_XOT, g.KEY_LOG]
+    # Repeats while still held are coalesced; the next release stops them.
+    g.down.add(g.KEY_RIGHT)
+    g.events[:] = [Event(g.KEYEV_HOLD, g.KEY_RIGHT) for _ in range(30)]
+    assert reader.read() == g.KEY_RIGHT
+    g.events[:] = [Event(g.KEYEV_HOLD, g.KEY_RIGHT), Event(g.KEYEV_UP, g.KEY_RIGHT),
+                  Event(g.KEYEV_NONE, 0), Event(g.KEYEV_DOWN, g.KEY_EXIT)]
+    assert reader.read() == g.KEY_EXIT
+
+    # Exercise the real editor loop: SHIFT changes the displayed case and
+    # alphabetic keys remain letters, including keys used as numeric shortcuts.
+    typing = editor_module.Editor(str(root / "typing.py"))
+    typing.confirm_discard = lambda: True
+    g.drawn_text.clear()
+    g.events[:] = [Event(g.KEYEV_DOWN, key) for key in (
+        g.KEY_ALPHA, g.KEY_XOT, g.KEY_SHIFT, g.KEY_LOG,
+        g.KEY_SHIFT, g.KEY_7, g.KEY_SHIFT, g.KEY_8,
+        g.KEY_SHIFT, g.KEY_4, g.KEY_0, g.KEY_EXIT)]
+    assert typing.run() == "exit"
+    assert typing.lines == ["aBMNPz"]
+    assert any('INSERT [A]' in item[3] for item in g.drawn_text)
+    assert any('F6 Sym' in item[3] for item in g.drawn_text)
+    typing.alpha_mode, typing.shift_active = 2, True
+    assert typing.resolve_char(g.KEY_LOG) == 'b'
+    assert typing._input_mode() == 'a'
+
+    shortcuts = editor_module.Editor(str(root / "shortcuts.py"))
+    shortcuts.confirm_discard = lambda: True
+    seen = []
+    shortcuts.style_menu = lambda: seen.append('Style')
+    def choose_symbol(title, items):
+        seen.append(title)
+        return '?'
+    shortcuts.popup = choose_symbol
+    g.events[:] = [Event(g.KEYEV_DOWN, key) for key in (
+        g.KEY_ALPHA, g.KEY_SHIFT, g.KEY_VARS, g.KEY_XOT,
+        g.KEY_F6, g.KEY_LOG, g.KEY_EXIT)]
+    assert shortcuts.run() == 'exit'
+    assert seen == ['Style', 'Symbols']
+    assert shortcuts.lines == ['a?b']
+    shortcuts.alpha_mode = 1
+    g.events[:] = [Event(g.KEYEV_DOWN, key) for key in (
+        g.KEY_SHIFT, g.KEY_LOG, g.KEY_F6, g.KEY_EXE)]
+    assert shortcuts.input_bar('Filename') == 'B?'
+
+    # Every editor theme identified as dark (also used by Files) paints a
+    # black canvas and status bar; selections and borders retain their colors.
+    for theme in ('GitHub Dark', 'PythonUltra Dark', 'Linux Terminal'):
+        editor.set_theme(theme)
+        g.backgrounds.clear()
+        editor.draw()
+        assert g.backgrounds == [0]
+        assert editor.palette[editor_module.BAR] == 0
+        g.events[:] = [Event(g.KEYEV_DOWN, g.KEY_EXIT)]
+        assert editor.popup('Dark popup', ('Cancel',)) is None
+        assert g.backgrounds[-1] == 0
 
     # New-file naming must never select an existing file for truncation.
     existing = root / "new.py"

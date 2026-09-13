@@ -1,0 +1,35 @@
+name: Module documentation
+
+on:
+  push:
+    branches: [cg50-new-display]
+    paths:
+      - 'ports/**'
+      - 'py/**'
+      - 'extmod/**'
+      - 'docs/library/**'
+      - 'tools/pythonultra_doc*'
+      - '.github/workflows/module-documentation.yml'
+  workflow_dispatch:
+
+jobs:
+  reference:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare the actual calculator module source
+        run: |
+          python3 ports/sh/apply_runtime_fixes.py
+          python3 ports/sh/apply_pythonultra_features.py
+          python3 ports/sh/apply_pythonultra_ui2.py
+          python3 ports/sh/apply_pythonultra_permissions.py
+          python3 ports/sh/apply_pythonultra_ui3_compat.py
+          python3 ports/sh/apply_pythonultra_symbols.py
+      - name: Generate and check module reference
+        run: python3 tools/pythonultra_docs.py --output build-module-docs/reference --runtime-header ports/sh/module_docs.h
+      - name: Test runtime documentation in MicroPython
+        run: python3 tests/ports/sh/runtime_docs_host.py --prepared
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PythonUltra-Module-Documentation
+          path: build-module-docs/PythonUltra-Module-Documentation.zip

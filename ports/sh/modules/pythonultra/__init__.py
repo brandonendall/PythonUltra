@@ -37,7 +37,7 @@ _CATALOG = (
 )
 
 UI_LIGHT = {"bg":0xFFFF, "fg":0x0000, "bar":0xD69A, "sel_bg":0x2104, "sel_fg":0xFFFF, "title":0x001F, "accent":0x07E0}
-UI_DARK = {"bg":0x1082, "fg":0xD69A, "bar":0x3186, "sel_bg":0x2148, "sel_fg":0xFFFF, "title":0x7D7C, "accent":0x07FF}
+UI_DARK = {"bg":0x0000, "fg":0xD69A, "bar":0x0000, "sel_bg":0x2148, "sel_fg":0xFFFF, "title":0x7D7C, "accent":0x07FF}
 
 
 def modules():
@@ -68,7 +68,6 @@ def popup(title, items, dark=False):
     """Use a bounded menu font, independent of the terminal/editor size."""
     import gint
     try:
-        gint.dfont_builtin("small")
         return _popup(title, items, dark)
     finally:
         gint.dfont(None)
@@ -110,6 +109,9 @@ def _popup(title, items, dark=False):
     import gint
     if not items:
         return None
+    # Re-importing gint resets the font on this port. Select it after the last
+    # import, before measuring or painting the menu.
+    gint.dfont_builtin("small")
     colors = dict(UI_DARK if dark else UI_LIGHT)
     colors["accent"] = menu_border()
     color = colors["accent"]
@@ -128,6 +130,9 @@ def _popup(title, items, dark=False):
     while True:
         visible = min(len(items), max_visible)
         bottom = min(215, row_top + visible * row_h + 7)
+
+        # Own the whole canvas, including the area outside the modal frame.
+        gint.dclear(colors["bg"])
 
         # Offset back layer and bright frame echo the native Geometry menus.
         gint.drect(panel_x + 5, panel_top + 5,
@@ -244,9 +249,10 @@ def _information_panel(gint, title, lines):
     title_text = str(title)
     gint.clearevents()
     while True:
-        # Keep the black body and offset frame used by the hardware-style UI.
-        gint.drect(panel_x + 5, panel_top + 5, panel_right + 5, panel_bottom + 5, 0x2104)
-        gint.drect_border(panel_x, panel_top, panel_right, panel_bottom, accent, 2, 0x0000)
+        # Clear outside the frame as well as the information body.
+        gint.dclear(0x0000)
+        gint.drect(panel_x + 5, panel_top + 5, panel_right + 5, panel_bottom + 5, 0x0000)
+        gint.drect_border(panel_x, panel_top, panel_right, panel_bottom, 0x0000, 2, accent)
         tab_x = panel_x + 14
         tab_right = min(panel_right - 12, tab_x + max(94, min(238, 26 + len(title_text) * 8)))
         gint.drect_border(tab_x, panel_top - 16, tab_right, panel_top + 1, accent, 2, 0x0000)

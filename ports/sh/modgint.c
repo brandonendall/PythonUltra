@@ -20,6 +20,9 @@
 #include <gint/drivers/keydev.h>
 #include <gint/config.h>
 #include <stdlib.h>
+#if GINT_RENDER_RGB
+#include "colorkey.h"
+#endif
 #if GINT_RENDER_MONO
 #include <gint/gray.h>
 #endif
@@ -639,6 +642,31 @@ static mp_obj_t modgint_dsubimage(size_t n_args, const mp_obj_t *args)
     return mp_const_none;
 }
 
+#if GINT_RENDER_RGB
+static mp_obj_t modgint_dsubimage_colorkey(size_t n_args, const mp_obj_t *args)
+{
+    bopti_image_t img;
+    objgintimage_get(args[2], &img);
+    if(img.format != IMAGE_RGB565)
+        mp_raise_ValueError("color-key blit requires RGB565 image");
+    mp_obj_gintimage_t *object = MP_OBJ_TO_PTR(args[2]);
+    mp_buffer_info_t buffer;
+    mp_get_buffer_raise(object->data, &buffer, MP_BUFFER_READ);
+    if(img.width <= 0 || img.height <= 0 || img.stride < img.width * 2 ||
+       (uint64_t)(img.height - 1) * img.stride + (uint64_t)img.width * 2 > buffer.len)
+        mp_raise_ValueError("invalid RGB565 image buffer");
+    pe_blit_rgb565_key(gint_vram, DWIDTH, DHEIGHT,
+        dwindow.left, dwindow.top, dwindow.right, dwindow.bottom,
+        buffer.buf, img.width, img.height, img.stride,
+        mp_obj_get_int(args[0]), mp_obj_get_int(args[1]),
+        mp_obj_get_int(args[3]), mp_obj_get_int(args[4]),
+        mp_obj_get_int(args[5]), mp_obj_get_int(args[6]),
+        (uint16_t)mp_obj_get_int(args[7]));
+    return mp_const_none;
+}
+FUN_BETWEEN(dsubimage_colorkey, 8, 8);
+#endif
+
 FUN_0(__init__);
 
 #if GINT_RENDER_RGB
@@ -878,6 +906,9 @@ static const mp_rom_map_elem_t modgint_module_globals_table[] = {
     #endif
     OBJ(dimage),
     OBJ(dsubimage),
+    #if GINT_RENDER_RGB
+    OBJ(dsubimage_colorkey),
+    #endif
 
     /* <gint/image.h> */
 

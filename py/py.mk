@@ -143,6 +143,7 @@ PY_CORE_O_BASENAME = $(addprefix py/,\
 	profile.o \
 	map.o \
 	obj.o \
+	objdoc.o \
 	objarray.o \
 	objattrtuple.o \
 	objbool.o \
