@@ -29,6 +29,7 @@ ifneq ($(PYTHONULTRA_RUNTIME_PREPARED),1)
 	python3 ../sh/apply_pythonultra_editor_nav_docs.py
 	python3 ../sh/apply_pythonultra_ui4.py
 	python3 ../sh/apply_pythonultra_info_menu.py
+	python3 ../sh/apply_pythonultra_cfiles.py
 	python3 ../../tools/pythonultra_docs.py --output ../../build-module-docs/reference --runtime-header ../sh/module_docs.h
 endif
 	python3 -m py_compile \
@@ -54,6 +55,9 @@ endif
 	python3 ../../tests/ports/sh/catalog_ui.py
 	python3 ../../tests/ports/sh/file_info_timestamp.py
 	python3 ../../tests/ports/sh/pythonultra_features.py
+	python3 ../../tests/ports/sh/cfile_execution.py
+	python3 ../../tests/ports/sh/picoc_integer_results.py
+	python3 ../../tests/ports/sh/picoc_smoke_host.py
 
 # The frozen Python modules must be patched and tested before firmware.bin is generated.
 $(BUILD)/firmware.bin: pythonultra-runtime-fixes

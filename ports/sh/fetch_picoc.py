@@ -131,8 +131,24 @@ def patch_fxcg50_include_library():
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
+def patch_integer_results():
+    """Store an IntType result through its int member only (big-endian safe)."""
+    path = DEST / "expression.c"
+    text = path.read_text(encoding="utf-8")
+    start = text.index("    // jdp: an ugly hack", text.index("void ExpressionPushInt(")) if "    // jdp: an ugly hack" in text else -1
+    marker = "    /* PythonUltra: write only the active IntType union member. */\n"
+    if marker in text:
+        return
+    if start < 0:
+        raise RuntimeError("unexpected PicoC ExpressionPushInt implementation")
+    end = text.index("\n\n    ExpressionStackPushValueNode", start)
+    text = text[:start] + marker + "    ValueLoc->Val->Integer = (int)IntValue;" + text[end:]
+    path.write_text(text, encoding="utf-8")
+
+
 def main():
     if ready():
+        patch_integer_results()
         print("PicoC source already pinned at", COMMIT[:12])
         return
 
@@ -195,6 +211,7 @@ def main():
     patch_fxcg50_time_library()
     patch_fxcg50_ctype_library()
     patch_fxcg50_include_library()
+    patch_integer_results()
 
     MARKER.write_text(COMMIT + "\n", encoding="utf-8")
     print("Prepared PicoC source in", DEST)
