@@ -14,8 +14,9 @@ Inspected 2026-09-13 before destination changes:
 
 Development histories diverged after `3f2b5e2`: destination had one unique UI
 commit and upstream had ten subsequent commits. The migration merges both
-histories on `migration/independent-cg50`; it does not replace main or rewrite
-existing branches. PythonUltra remains in GitHub's fork network until the owner
+histories on `migration/independent-cg50`, then promotes them through PR #1
+to main at `34ff2a6b1a34fdccb46611f50813b9d737521a7e`. No history was
+rewritten. The merged tree exactly matches the source verified by Run 3. PythonUltra remains in GitHub's fork network until the owner
 chooses detachment. Builds and maintenance do not depend on that detachment.
 
 The original uncommitted checkout was left intact. Its complete source edits,
@@ -152,3 +153,34 @@ For comparison, upstream Run 132 was 447,228 bytes with text=417,376,
 data=1,168 and bss=1,984. Run 135 added 183,176 bytes (about 179 KiB) of text/ROM
 with no change in linked data or bss. This supports keeping the feature for its
 help value; it does not establish calculator peak heap/stack usage.
+
+## Delivered candidate and main promotion
+
+[PR #1](https://github.com/brandonendall/PythonUltra/pull/1) is merged.
+[Destination Run 3](https://github.com/brandonendall/PythonUltra/actions/runs/34729940742)
+passed at `cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27`.
+[Download its artifact](https://github.com/brandonendall/PythonUltra/actions/runs/34729940742/artifacts/10308659697):
+
+- `PythonUltra-CG50-run3.g3a`: 631,308 bytes; SHA-256
+  `1e05951c1bab6285b29b9b846c7a9b2d0bb2e9c81823b201b3b3a90472da6f92`.
+- `PythonUltra-Module-Documentation-run3.zip`: SHA-256
+  `5886672ed6637a03ed425873502ee3787891c3991d723c82b05ed6e0504cc1e3`.
+- Also includes the guide, corrected motion demo and build metadata/checksums.
+- ELF text=601,456, data=1,168, bss=1,984. Data/bss remain unchanged from
+  upstream Run 135; source-specific extra Info code adds about 904 ROM bytes.
+
+Docs-only Run 2 passed and produced
+`PythonUltra-Module-Documentation-docs-run2`. All five workflows have successful
+runs in PythonUltra. The first build failed YAML parsing before any compilation;
+Run 2 and final-source Run 3 succeeded. The main promotion also successfully
+triggered all five workflows. Its documentation, py3d, native color-key and
+provenance jobs passed; automatic repeat calculator builds (PR Run 4 and main
+Run 5) were still in progress at receipt time. They are not claimed successful.
+Run 3 verifies the identical source tree merged into main. This receipt changes
+only documentation and does not require another calculator compilation.
+
+Artifact names, sizes and archive digests are verified through Actions metadata;
+G3A content smoke tests, section sizes and inner-file checksums are recorded in
+successful job logs. A local artifact download returned HTTP 403, so the ZIP was
+not independently extracted here. GitHub's artifact download above is the
+available delivery route. New candidate hardware acceptance remains open.

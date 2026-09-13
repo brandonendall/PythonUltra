@@ -2,7 +2,7 @@
 
 The maintained **PythonUltra** project, derived from PythonExtra, focused on modern Casio fx-CG50 hardware and lightweight 2D/3D game development.
 
-[![Build fx-CG50](https://github.com/brandonendall/PythonUltra/actions/workflows/build-cg50.yml/badge.svg?branch=migration%2Findependent-cg50)](https://github.com/brandonendall/PythonUltra/actions/workflows/build-cg50.yml)
+[![Build fx-CG50](https://github.com/brandonendall/PythonUltra/actions/workflows/build-cg50.yml/badge.svg?branch=main)](https://github.com/brandonendall/PythonUltra/actions/workflows/build-cg50.yml)
 
 ## Confirmed hardware compatibility
 
@@ -67,8 +67,8 @@ The [PythonUltra master list](PYTHONULTRA_ROADMAP.md) is the canonical running
 roadmap, cross-referenced against code, tests, commits and hardware reports.
 It separates implemented features from active defects and genuinely unbuilt work.
 
-- `migration/independent-cg50` — current independent-maintenance candidate; CI and hardware status are recorded separately.
-- `main` — imported upstream baseline and project infrastructure, pending reviewed migration.
+- `main` — primary maintained PythonUltra branch; migration merged through PR #1.
+- `migration/independent-cg50` — retained migration history; Run 3 verified its source in CI.
 - `cg50-new-display` — preserved prior development branch; historical hardware confirmations apply to their recorded binaries.
 - **Completed milestone 1:** compact Pygame compatibility layer and PythonUltra rename.
 - **Completed milestone 2:** compact NumPy matrix/vector expansion, including transpose and inverse.

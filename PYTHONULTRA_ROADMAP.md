@@ -13,7 +13,10 @@ Reconciled through 2026-09-12 against source, build patches, tests, run #135 at 
 
 ## Independent maintenance migration — September 13
 
-The candidate is `migration/independent-cg50` in PythonUltra. See the
+The migration is merged into `main` through PR #1. Destination Run 3 passed
+at `cad3c3bcb6f8`; the merge has an identical source tree. The resulting
+`PythonUltra-CG50-run3.g3a` is 631,308 bytes and is CI-tested, not yet
+physically tested. See the
 [migration decisions and complete Actions inventory](docs/pythonultra/independent-migration.md)
 and [verification record](docs/pythonultra/migration-verification.json).
 Destination workflow counters are independent of upstream Runs 131–135.

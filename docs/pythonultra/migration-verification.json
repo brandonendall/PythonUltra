@@ -5,7 +5,7 @@
   "migration_branch": "migration/independent-cg50",
   "archive_branch": "archive/local-run130-1-work",
   "archive_commit": "71ac1d0e59a7e568df860d431ba2a941e27e4022",
-  "source_commit": "39569967102955fdf3438e78d606569500e0f58c",
+  "source_commit": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
   "upstream_runs": [
     {
       "id": 34718875834,
@@ -90,16 +90,152 @@
   ],
   "destination_runs": [
     {
+      "branch": "main",
+      "conclusion": "success",
+      "event": "push",
+      "id": 34730339612,
+      "name": "Test py3d",
+      "number": 3,
+      "sha": "34ff2a6b1a34fdccb46611f50813b9d737521a7e",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730339612"
+    },
+    {
+      "branch": "main",
       "conclusion": null,
+      "event": "push",
+      "id": 34730339605,
+      "name": "Build fx-CG50",
+      "number": 5,
+      "sha": "34ff2a6b1a34fdccb46611f50813b9d737521a7e",
+      "status": "in_progress",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730339605"
+    },
+    {
+      "branch": "main",
+      "conclusion": "success",
+      "event": "push",
+      "id": 34730339593,
+      "name": "Module documentation",
+      "number": 4,
+      "sha": "34ff2a6b1a34fdccb46611f50813b9d737521a7e",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730339593"
+    },
+    {
+      "branch": "main",
+      "conclusion": "success",
+      "event": "push",
+      "id": 34730339587,
+      "name": "Validate native pygame colorkey",
+      "number": 3,
+      "sha": "34ff2a6b1a34fdccb46611f50813b9d737521a7e",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730339587"
+    },
+    {
+      "branch": "main",
+      "conclusion": "success",
+      "event": "push",
+      "id": 34730339583,
+      "name": "Validate source provenance",
+      "number": 3,
+      "sha": "34ff2a6b1a34fdccb46611f50813b9d737521a7e",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730339583"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": "success",
+      "event": "pull_request",
+      "id": 34730251728,
+      "name": "Validate source provenance",
+      "number": 2,
+      "sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730251728"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": "success",
+      "event": "pull_request",
+      "id": 34730251684,
+      "name": "Test py3d",
+      "number": 2,
+      "sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730251684"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": "success",
+      "event": "pull_request",
+      "id": 34730251681,
+      "name": "Module documentation",
+      "number": 3,
+      "sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730251681"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": null,
+      "event": "pull_request",
+      "id": 34730251676,
+      "name": "Build fx-CG50",
+      "number": 4,
+      "sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+      "status": "in_progress",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730251676"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": "success",
+      "event": "pull_request",
+      "id": 34730251664,
+      "name": "Validate native pygame colorkey",
+      "number": 2,
+      "sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34730251664"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": "success",
+      "event": "push",
+      "id": 34729940742,
+      "name": "Build fx-CG50",
+      "number": 3,
+      "sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34729940742"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": "success",
+      "event": "push",
+      "id": 34729940705,
+      "name": "Module documentation",
+      "number": 2,
+      "sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+      "status": "completed",
+      "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34729940705"
+    },
+    {
+      "branch": "migration/independent-cg50",
+      "conclusion": "success",
+      "event": "push",
       "id": 34729533249,
       "name": "Build fx-CG50",
       "number": 2,
       "sha": "39569967102955fdf3438e78d606569500e0f58c",
-      "status": "in_progress",
+      "status": "completed",
       "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34729533249"
     },
     {
+      "branch": "migration/independent-cg50",
       "conclusion": "success",
+      "event": "push",
       "id": 34729480409,
       "name": "Validate source provenance",
       "number": 1,
@@ -108,7 +244,9 @@
       "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34729480409"
     },
     {
+      "branch": "migration/independent-cg50",
       "conclusion": "success",
+      "event": "push",
       "id": 34729480382,
       "name": "Validate native pygame colorkey",
       "number": 1,
@@ -117,7 +255,9 @@
       "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34729480382"
     },
     {
+      "branch": "migration/independent-cg50",
       "conclusion": "success",
+      "event": "push",
       "id": 34729480366,
       "name": "Module documentation",
       "number": 1,
@@ -126,7 +266,9 @@
       "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34729480366"
     },
     {
+      "branch": "migration/independent-cg50",
       "conclusion": "success",
+      "event": "push",
       "id": 34729480359,
       "name": "Test py3d",
       "number": 1,
@@ -135,7 +277,9 @@
       "url": "https://github.com/brandonendall/PythonUltra/actions/runs/34729480359"
     },
     {
+      "branch": "migration/independent-cg50",
       "conclusion": "failure",
+      "event": "push",
       "id": 34729479928,
       "name": ".github/workflows/build-cg50.yml",
       "number": 1,
@@ -146,22 +290,22 @@
   ],
   "documentation_artifacts": [
     {
-      "archive_download_url": "https://api.github.com/repos/brandonendall/PythonUltra/actions/artifacts/10308214629/zip",
-      "created_at": "2026-09-13T01:01:57Z",
-      "digest": "sha256:90143c8eae2d5248ace32f8a13b4ecfcefe37581563d561726b9225e35209e1e",
+      "archive_download_url": "https://api.github.com/repos/brandonendall/PythonUltra/actions/artifacts/10309257667/zip",
+      "created_at": "2026-09-13T01:12:36Z",
+      "digest": "sha256:b03a425650f924ce852dbefb52d3cdc541796dffb3ed2e071cf8c79f7fbe746b",
       "expired": false,
-      "expires_at": "2026-12-12T01:01:40Z",
-      "id": 10308214629,
-      "name": "PythonUltra-Module-Documentation-docs-run1",
-      "node_id": "MDg6QXJ0aWZhY3QxMDMwODIxNDYyOQ==",
-      "size_in_bytes": 109459,
-      "updated_at": "2026-09-13T01:01:57Z",
-      "url": "https://api.github.com/repos/brandonendall/PythonUltra/actions/artifacts/10308214629",
+      "expires_at": "2026-12-12T01:12:21Z",
+      "id": 10309257667,
+      "name": "PythonUltra-Module-Documentation-docs-run2",
+      "node_id": "MDg6QXJ0aWZhY3QxMDMwOTI1NzY2Nw==",
+      "size_in_bytes": 109445,
+      "updated_at": "2026-09-13T01:12:36Z",
+      "url": "https://api.github.com/repos/brandonendall/PythonUltra/actions/artifacts/10309257667",
       "workflow_run": {
         "head_branch": "migration/independent-cg50",
         "head_repository_id": 1361930948,
-        "head_sha": "b1e8aca83d2209380caa184000814a08c24eb82c",
-        "id": 34729480366,
+        "head_sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+        "id": 34729940705,
         "repository_id": 1361930948
       }
     }
@@ -187,5 +331,52 @@
     "run132_bss": 1984,
     "run135_bss": 1984,
     "peak_runtime_heap_stack": "unmeasured"
-  }
+  },
+  "verified_at": "2026-09-13T01:24:00Z",
+  "primary_branch": "main",
+  "pull_request": "https://github.com/brandonendall/PythonUltra/pull/1",
+  "merged_commit": "34ff2a6b1a34fdccb46611f50813b9d737521a7e",
+  "merge_tree_matches_ci_source": true,
+  "verified_candidate": {
+    "run": 3,
+    "run_id": 34729940742,
+    "g3a": "PythonUltra-CG50-run3.g3a",
+    "g3a_bytes": 631308,
+    "g3a_sha256": "1e05951c1bab6285b29b9b846c7a9b2d0bb2e9c81823b201b3b3a90472da6f92",
+    "reference_zip": "PythonUltra-Module-Documentation-run3.zip",
+    "reference_sha256": "5886672ed6637a03ed425873502ee3787891c3991d723c82b05ed6e0504cc1e3",
+    "artifacts": [
+      {
+        "archive_download_url": "https://api.github.com/repos/brandonendall/PythonUltra/actions/artifacts/10308659697/zip",
+        "created_at": "2026-09-13T01:20:28Z",
+        "digest": "sha256:d5894da173ca272be280b1f9a023e0d2a7e6b0bc2cb10d94d992c4ccc53296b8",
+        "expired": false,
+        "expires_at": "2026-12-12T01:12:21Z",
+        "id": 10308659697,
+        "name": "PythonUltra-CG50-run3",
+        "node_id": "MDg6QXJ0aWZhY3QxMDMwODY1OTY5Nw==",
+        "size_in_bytes": 746899,
+        "updated_at": "2026-09-13T01:20:28Z",
+        "url": "https://api.github.com/repos/brandonendall/PythonUltra/actions/artifacts/10308659697",
+        "workflow_run": {
+          "head_branch": "migration/independent-cg50",
+          "head_repository_id": 1361930948,
+          "head_sha": "cad3c3bcb6f8e9ccdbc72a33237164e9a0c5af27",
+          "id": 34729940742,
+          "repository_id": 1361930948
+        }
+      }
+    ],
+    "elf_sections": {
+      "text": 601456,
+      "data": 1168,
+      "bss": 1984
+    }
+  },
+  "limits": [
+    "GitHub still lists destination as a fork; no detach/delete operation performed.",
+    "PR run 4 and main run 5 are automatic repeat calculator builds still running at recording time; Run 3 independently built and tested the identical merged source tree.",
+    "Artifact presence, sizes, archive digests, G3A smoke checks and inner-file checksums verified through Actions metadata/logs. Local artifact download was blocked by HTTP 403; archive contents were not independently extracted here.",
+    "Several cold toolchain dependencies remain version-recorded rather than fully locked, matching upstream installation behavior."
+  ]
 }
