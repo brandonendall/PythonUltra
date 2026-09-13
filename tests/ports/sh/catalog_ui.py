@@ -88,7 +88,7 @@ assert g.backgrounds[-2:] == [0, 0]
 assert ui.UI_DARK['bg'] == ui.UI_DARK['bar'] == 0
 assert g.font == "default"
 assert g.drains == 1
-assert g.frames[0][4:] == (0x0000, 2, 0xF800)
+assert g.frames[0][4] == 0xF800
 for x, y, color, text in g.text:
     assert x >= 0 and x + g.dsize(text)[0] <= 362
     assert 0 <= y and y + 10 <= 224

@@ -3,7 +3,9 @@ name: Build fx-CG50
 on:
   push:
     branches:
+      - main
       - cg50-new-display
+      - "migration/**"
     paths:
       - "ports/**"
       - "py/**"
@@ -12,9 +14,20 @@ on:
       - "tests/**"
       - "tools/pythonultra_doc*"
       - "docs/library/**"
-      - "logo/run130-1-icon.png"
+      - "logo/**"
+      - "Makefile"
+      - "UPSTREAM_COMMIT"
       - ".github/workflows/build-cg50.yml"
+  pull_request:
+    branches: [main, cg50-new-display]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -45,7 +58,9 @@ jobs:
           import shutil
 
           # Exact pixels recovered from the user's supplied run130.1 binary.
-          source = Path("logo/run130-1-icon.png")
+          source = Path("logo/**"
+      - "Makefile"
+      - "UPSTREAM_COMMIT")
           out_dir = Path("ports/fxcg50")
           size = (92, 64)
 
@@ -182,7 +197,10 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           mkdir -p build-info
           {
-            echo "PythonExtra: $(git rev-parse HEAD)"
+            echo "PythonUltra repository: $GITHUB_REPOSITORY"
+            echo "PythonUltra: $GITHUB_SHA"
+            echo "Ref: $GITHUB_REF"
+            echo "Workflow run: $GITHUB_RUN_NUMBER attempt $GITHUB_RUN_ATTEMPT"
             echo "Upstream PythonExtra: $(cat UPSTREAM_COMMIT 2>/dev/null || echo unknown)"
             echo "gint: $(git -C "$(giteapc show -p Lephenixnoir/gint)" rev-parse HEAD)"
             echo "fxSDK: $(git -C "$(giteapc show -p Lephenixnoir/fxsdk)" rev-parse HEAD)"
@@ -290,9 +308,14 @@ jobs:
           set -euo pipefail
           candidate="ports/fxcg50/PythonUltra-CG50-run${GITHUB_RUN_NUMBER}.g3a"
           cp ports/fxcg50/PythonUltra.g3a "$candidate"
+          cp build-module-docs/PythonUltra-Module-Documentation.zip "build-module-docs/PythonUltra-Module-Documentation-run${GITHUB_RUN_NUMBER}.zip"
           mkdir -p build-info
-          sha256sum "$candidate" > build-info/SHA256SUMS.txt
+          sha256sum "$candidate" "build-module-docs/PythonUltra-Module-Documentation-run${GITHUB_RUN_NUMBER}.zip" > build-info/SHA256SUMS.txt
           printf 'Run: %s\nCommit: %s\n' "$GITHUB_RUN_NUMBER" "$GITHUB_SHA" > build-info/candidate.txt
+
+      - name: Record firmware section sizes
+        run: |
+          sh-elf-size ports/fxcg50/build/firmware.elf | tee build-info/firmware-size.txt
 
       - name: Upload G3A and guide
         uses: actions/upload-artifact@v4
@@ -302,6 +325,6 @@ jobs:
             ports/fxcg50/PythonUltra-CG50-run*.g3a
             ports/sh/PythonUltra_User_Guide.txt
             build-info/
-            build-module-docs/PythonUltra-Module-Documentation.zip
+            build-module-docs/PythonUltra-Module-Documentation-run*.zip
             ports/sh/examples/colorkey_motion.py
           if-no-files-found: error

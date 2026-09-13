@@ -1,58 +1,27 @@
-name: Apply pygame colorkey fix
+name: Validate native pygame colorkey
 
+# The Run 131 native implementation supersedes the old source-writing patch.
 on:
   push:
-    branches:
-      - cg50-new-display
+    branches: [main, cg50-new-display, "migration/**"]
     paths:
-      - ".github/workflows/apply-pygame-colorkey.yml"
+      - 'ports/sh/modules/pygame/**'
+      - 'ports/sh/modgint.c'
+      - 'ports/sh/colorkey.h'
+      - 'ports/sh/examples/colorkey_motion.py'
+      - 'tests/ports/sh/pygame*'
+      - '.github/workflows/apply-pygame-colorkey.yml'
+  pull_request:
+    branches: [main, cg50-new-display]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch:
+  test:
     runs-on: ubuntu-24.04
     steps:
-      - name: Check out cg50-new-display
-        uses: actions/checkout@v4
-        with:
-          ref: cg50-new-display
-          fetch-depth: 0
-
-      - name: Patch pygame keyed blit fast path
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("ports/sh/modules/pygame/__init__.py")
-          text = path.read_text(encoding="utf-8")
-          old = "        if self._screen and source._image is not None:\n"
-          new = "        if self._screen and source._image is not None and source._colorkey is None:\n"
-
-          count = text.count(old)
-          if count != 1:
-              raise SystemExit(f"Expected exactly one pygame dimage fast-path guard, found {count}")
-
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
-          print("Patched pygame screen blit so keyed sprites use the transparent software path")
-          PY
-
-          git diff --check
-          git diff -- ports/sh/modules/pygame/__init__.py
-
-      - name: Commit source fix
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git diff --quiet; then
-            echo "No source change required"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ports/sh/modules/pygame/__init__.py
-          git commit -m "fix(pygame): honor Surface colorkey during screen blits"
-          git push origin HEAD:cg50-new-display
+      - uses: actions/checkout@v4
+      - name: Verify native transparency and transforms
+        run: python3 tests/ports/sh/pygame_colorkey.py
