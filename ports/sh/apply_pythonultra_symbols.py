@@ -7,6 +7,7 @@ MAIN = ROOT / "main.c"
 WIDGET_C = ROOT / "widget_shell.c"
 WIDGET_H = ROOT / "widget_shell.h"
 PYULTRA = ROOT / "modules" / "pythonultra" / "__init__.py"
+PYEDITOR = ROOT / "modules" / "pyeditor" / "__init__.py"
 PYTERM = ROOT / "modules" / "pyterm" / "__init__.py"
 
 
@@ -40,6 +41,23 @@ def patch_python_ui():
             '''def catalog_ui(dark=False):\n''',
             '''def symbol_ui(dark=False):\n    """Open the SHIFT+DEL programming-symbol picker and return one character."""\n    return popup("Programming Symbols", _PROGRAMMING_SYMBOLS, dark)\n\n\ndef catalog_ui(dark=False):\n''',
             "symbol UI helper",
+        ),
+        (
+            '''    return member if module == "builtins" else module + "." + member\n''',
+            '''    # Construct '.' at runtime so frozen-QSTR punctuation never leaks\n    # into inserted code as the internal token name __dot__.\n    return member if module == "builtins" else module + chr(46) + member\n''',
+            "catalog runtime dot",
+        ),
+    ])
+
+
+def patch_editor_symbols():
+    # The editor's physical decimal key used a frozen one-character string.
+    # Build the period at runtime for the same reason as catalog_text().
+    return patch(PYEDITOR, [
+        (
+            '''g.KEY_DOT:".", g.KEY_ADD:"+"''',
+            '''g.KEY_DOT:chr(46), g.KEY_ADD:"+"''',
+            "editor decimal key runtime dot",
         ),
     ])
 
@@ -92,6 +110,7 @@ def patch_main():
 def main():
     changed = []
     if patch_python_ui(): changed.append("catalog")
+    if patch_editor_symbols(): changed.append("editor-dot")
     if patch_terminal_help(): changed.append("manual")
     if patch_widget(): changed.append("widget")
     if patch_main(): changed.append("native")
