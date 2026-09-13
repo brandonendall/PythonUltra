@@ -1,8 +1,8 @@
 # PythonUltra for fx-CG50
 
-A working fork of PythonExtra, now built as **PythonUltra**, focused on modern Casio fx-CG50 hardware and lightweight 2D/3D game development.
+The maintained **PythonUltra** project, derived from PythonExtra, focused on modern Casio fx-CG50 hardware and lightweight 2D/3D game development.
 
-[![Build fx-CG50](https://github.com/OffCamera-Civilman/PythonExtra-CG50/actions/workflows/build-cg50.yml/badge.svg?branch=cg50-new-display)](https://github.com/OffCamera-Civilman/PythonExtra-CG50/actions/workflows/build-cg50.yml)
+[![Build fx-CG50](https://github.com/brandonendall/PythonUltra/actions/workflows/build-cg50.yml/badge.svg?branch=migration%2Findependent-cg50)](https://github.com/brandonendall/PythonUltra/actions/workflows/build-cg50.yml)
 
 ## Confirmed hardware compatibility
 
@@ -67,8 +67,9 @@ The [PythonUltra master list](PYTHONULTRA_ROADMAP.md) is the canonical running
 roadmap, cross-referenced against code, tests, commits and hardware reports.
 It separates implemented features from active defects and genuinely unbuilt work.
 
-- `main` — imported upstream baseline and project infrastructure.
-- `cg50-new-display` — active PythonUltra integration branch, confirmed on older and newer fx-CG50 revisions.
+- `migration/independent-cg50` — current independent-maintenance candidate; CI and hardware status are recorded separately.
+- `main` — imported upstream baseline and project infrastructure, pending reviewed migration.
+- `cg50-new-display` — preserved prior development branch; historical hardware confirmations apply to their recorded binaries.
 - **Completed milestone 1:** compact Pygame compatibility layer and PythonUltra rename.
 - **Completed milestone 2:** compact NumPy matrix/vector expansion, including transpose and inverse.
 - **Completed milestone 3:** first frozen `py3d` software-rendering engine and rotating-cube demo.
@@ -78,10 +79,10 @@ It separates implemented features from active defects and genuinely unbuilt work
 
 ## Collaboration
 
-PythonUltra is maintained in the `OffCamera-Civilman/PythonExtra-CG50` repository with community co-collaboration and hardware testing from [@brandonendall](https://github.com/brandonendall).
+PythonUltra is maintained in [brandonendall/PythonUltra](https://github.com/brandonendall/PythonUltra). Development history and attribution from [OffCamera-Civilman/PythonExtra-CG50](https://github.com/OffCamera-Civilman/PythonExtra-CG50) are preserved. See the [migration decisions and automation inventory](docs/pythonultra/independent-migration.md).
 
 ## Upstream
 
 Original project: **Lephenixnoir/PythonExtra** on Planet Casio.
 
-The bootstrap workflow imports the upstream source into this repository so the rest of the work can happen on GitHub.
+Source import is complete. The provenance workflow validates the maintained source; future upstream changes are compared and merged on review branches.
