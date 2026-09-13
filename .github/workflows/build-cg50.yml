@@ -308,7 +308,7 @@ jobs:
           cp ports/fxcg50/PythonUltra.g3a "$candidate"
           cp build-module-docs/PythonUltra-Module-Documentation.zip "build-module-docs/PythonUltra-Module-Documentation-run${GITHUB_RUN_NUMBER}.zip"
           mkdir -p build-info
-          sha256sum "$candidate" "build-module-docs/PythonUltra-Module-Documentation-run${GITHUB_RUN_NUMBER}.zip" > build-info/SHA256SUMS.txt
+          sha256sum "$candidate" "build-module-docs/PythonUltra-Module-Documentation-run${GITHUB_RUN_NUMBER}.zip" | tee build-info/SHA256SUMS.txt
           printf 'Run: %s\nCommit: %s\n' "$GITHUB_RUN_NUMBER" "$GITHUB_SHA" > build-info/candidate.txt
 
       - name: Record firmware section sizes

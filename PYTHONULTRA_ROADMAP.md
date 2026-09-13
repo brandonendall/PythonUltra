@@ -1,6 +1,7 @@
 # PythonUltra master list
 
-Shared running task list for `OffCamera-Civilman/PythonExtra-CG50`, branch `cg50-new-display`.
+Shared running task list for `brandonendall/PythonUltra`. Upstream history from
+`OffCamera-Civilman/PythonExtra-CG50` is preserved.
 Reconciled through 2026-09-12 against source, build patches, tests, run #135 at `f718931c7836`, and user hardware reports. This file is the canonical task list; update it with every feature/fix handoff. Never infer hardware success from a green compiler run or from a Catalog entry alone.
 
 ## Status rules
@@ -9,6 +10,19 @@ Reconciled through 2026-09-12 against source, build patches, tests, run #135 at 
 - **Implemented**: integrated source/build exists; scope or remaining verification is stated below.
 - **Active fix**: code exists but hardware reports show a defect. A local or CI pass does not close it.
 - **Remaining**: not integrated, or only part of the requested functionality exists.
+
+## Independent maintenance migration — September 13
+
+The candidate is `migration/independent-cg50` in PythonUltra. See the
+[migration decisions and complete Actions inventory](docs/pythonultra/independent-migration.md)
+and [verification record](docs/pythonultra/migration-verification.json).
+Destination workflow counters are independent of upstream Runs 131–135.
+Run 131 hardware success is preserved; Run 132 is cleanup, not the planned
+Modified timestamp tranche. Runs 133–135 are the separately evaluated runtime
+help effort. Experimental local clock/timer work and the original 130.1 binary
+are preserved on `archive/local-run130-1-work`, not enabled in this candidate.
+All historical hardware reports below apply to their specific binaries.
+The migrated candidate still requires physical CG50 acceptance.
 
 ## September 8–12 hardware feedback and documentation handoff
 
@@ -67,7 +81,7 @@ provenance for the modified build remains unresolved.
 PicoC, adjustable date/time and truthful persistent file timestamps remain
 open below. The new reports do not mark those capabilities completed.
 
-## Current correction release
+## Historical upstream correction release
 
 Candidate **run #132** passed GitHub Actions on 2026-09-12, commit
 `49964644b233fa131c380c1b5d528e32f4e80c90`.

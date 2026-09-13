@@ -194,7 +194,7 @@ _STARTED = False
 _RC_TEMPLATE = """# PythonUltra terminal configuration
 # Read at startup. Lines beginning with # are comments.
 set theme=dark
-set startup=files
+set startup=terminal
 # Optional: color name, #RRGGBB, or 0xRGB565. Omitted -> red.
 # set menu_border=red
 set font=normal

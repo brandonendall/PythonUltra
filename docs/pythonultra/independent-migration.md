@@ -45,7 +45,9 @@ reproduce that binary exactly.
   canvas/dialog corrections. Preserve small popup font selection after the last
   gint import, because imports reset the display/font on this port.
 - Preserve PythonUltra's red menu-border fallback, existing configured startup,
-  Files default for new RC files, and its separate scrollable framed F6 Info.
+  terminal startup for newly created RC files (matching the recovered 130.1
+  template), and its separate scrollable framed F6 Info. Existing RC selections
+  remain honored; missing/invalid selections still fall back to Files.
   Correct Info's body fill/border argument order and clear its surrounding canvas
   black. Keep light-theme backgrounds and selected/colored UI accents meaningful.
 - Include Run 133–135 ROM-backed module help, separately from feature scheduling.

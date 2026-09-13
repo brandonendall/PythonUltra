@@ -29,11 +29,11 @@ def reload_from(path):
 with tempfile.TemporaryDirectory() as temp_root:
     root = Path(temp_root)
 
-    # Preserve PythonUltra's Files startup default. Missing/invalid startup in an existing
+    # Preserve the recovered run130.1 template. Missing/invalid startup in an existing
     # RC still falls back to Files; an explicit RC selection wins.
     missing = root / "default.rc"
-    assert reload_from(missing) == 1
-    assert "set startup=files" in missing.read_text(encoding="utf-8")
+    assert reload_from(missing) == 0
+    assert "set startup=terminal" in missing.read_text(encoding="utf-8")
 
     terminal = root / "terminal.rc"
     terminal.write_text("set startup=terminal\n", encoding="utf-8")
