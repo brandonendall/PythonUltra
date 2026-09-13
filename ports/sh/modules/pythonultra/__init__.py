@@ -1,6 +1,6 @@
 """PythonUltra on-calculator reference and UI helpers."""
 
-__version__ = "0.3.2-cg50"
+__version__ = "0.4.0-cg50"
 
 try:
     from ._build import BUILD_ID
@@ -17,7 +17,7 @@ _CATALOG = (
     ("checksum", ("sha256_file", "sha1_file")),
     ("os", ("getcwd", "chdir", "listdir", "mkdir", "remove", "unlink", "rename", "rmdir", "stat", "sep")),
     ("json", ("dumps", "loads", "dump", "load")),
-    ("time", ("time", "sleep", "sleep_ms", "sleep_us", "ticks_ms", "ticks_us", "ticks_diff")),
+    ("time", ("time", "time_ns", "localtime", "gmtime", "mktime", "set_datetime", "monotonic", "sleep", "sleep_ms", "sleep_us", "ticks_ms", "ticks_us", "ticks_diff")),
     ("math", ("sqrt", "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "floor", "ceil", "exp", "log", "pow", "pi", "e")),
     ("random", ("random", "randint", "randrange", "choice", "getrandbits", "seed")),
     ("sys", ("path", "argv", "modules", "version", "implementation", "platform")),
@@ -215,27 +215,25 @@ def catalog_insert_ui(dark=False):
     return catalog_text(*selection) if selection is not None else None
 
 
-def information_panel(title, lines, dark=False):
+def information_panel(title, lines, dark=False, clock=False):
     """Show read-only reference text in the established framed modal style."""
-    if not dark:
-        return popup(title, lines, False)
-
     import gint
     try:
         gint.dfont_builtin("small")
-        return _information_panel(gint, title, lines)
+        return _information_panel(gint, title, lines, dark, clock)
     finally:
         gint.dfont(None)
 
 
-def _information_panel(gint, title, lines):
-    """Draw a dark, scrollable information panel without changing menu popups."""
+def _information_panel(gint, title, lines, dark=True, clock=False):
+    """Draw a scrollable information page using the configured outline."""
     lines = tuple(str(line) for line in lines)
     if not lines:
         return None
     accent = menu_border()
     brightness = ((accent >> 11) & 31) * 2 + ((accent >> 5) & 63) * 3 + (accent & 31)
     title_color = 0x0000 if brightness >= 140 else 0xFFFF
+    bg, fg = (0x0000, 0xFFFF) if dark else (0xFFFF, 0x0000)
     panel_x, panel_right = 24, 372
     panel_top, panel_bottom = 31, 211
     text_x, text_top, row_h = panel_x + 13, panel_top + 14, 15
@@ -244,12 +242,13 @@ def _information_panel(gint, title, lines):
     title_text = str(title)
     gint.clearevents()
     while True:
-        # Keep the black body and offset frame used by the hardware-style UI.
+        # Clear the whole page so an earlier light screen cannot show through.
+        gint.drect(0, 0, 395, 223, bg)
         gint.drect(panel_x + 5, panel_top + 5, panel_right + 5, panel_bottom + 5, 0x2104)
-        gint.drect_border(panel_x, panel_top, panel_right, panel_bottom, accent, 2, 0x0000)
+        gint.drect_border(panel_x, panel_top, panel_right, panel_bottom, bg, 2, accent)
         tab_x = panel_x + 14
         tab_right = min(panel_right - 12, tab_x + max(94, min(238, 26 + len(title_text) * 8)))
-        gint.drect_border(tab_x, panel_top - 16, tab_right, panel_top + 1, accent, 2, 0x0000)
+        gint.drect_border(tab_x, panel_top - 16, tab_right, panel_top + 1, accent, 2, accent)
         gint.dtext(tab_x + 8, panel_top - 13, title_color,
                    _popup_text(gint, title_text, tab_right - tab_x - 16))
 
@@ -257,15 +256,18 @@ def _information_panel(gint, title, lines):
             index = scroll + row
             if index >= len(lines):
                 break
-            gint.dtext(text_x, text_top + row * row_h, 0xFFFF,
+            gint.dtext(text_x, text_top + row * row_h, fg,
                        _popup_text(gint, lines[index], panel_right - text_x - 12))
         if scroll > 0:
             gint.dtext(panel_right - 19, panel_top + 5, accent, "^")
         if scroll + max_visible < len(lines):
             gint.dtext(panel_right - 19, panel_bottom - 14, accent, "v")
 
+        gint.dtext(25, 214, fg, "F2: Date/Time    EXIT: Back" if clock else "EXIT: Back")
         gint.dupdate()
         key = _popup_key(gint)
+        if clock and key == gint.KEY_F2:
+            return "clock"
         if key in (gint.KEY_EXIT, gint.KEY_LEFT, gint.KEY_RIGHT, gint.KEY_EXE):
             return None
         if key == gint.KEY_UP:
@@ -279,9 +281,11 @@ def _information_panel(gint, title, lines):
 
 
 def info_lines():
+    from .clock import clock_text
     return (
         "PythonUltra for Casio fx-CG50",
         "Build: " + BUILD_ID,
+        "Clock: " + clock_text(),
         "MicroPython + gint + JustUI",
         "Based on PythonExtra",
         "Co-collaboration build:",
@@ -297,4 +301,6 @@ def info_lines():
 
 
 def info_ui(dark=False):
-    return information_panel("PythonUltra Info", info_lines(), dark)
+    from .clock import show
+    while information_panel("PythonUltra Info", info_lines(), dark, clock=True) == "clock":
+        show(dark)

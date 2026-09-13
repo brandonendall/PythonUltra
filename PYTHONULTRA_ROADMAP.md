@@ -1,6 +1,7 @@
 # PythonUltra master list
 
-Shared running task list for `OffCamera-Civilman/PythonExtra-CG50`, branch `cg50-new-display`.
+Shared running task list for `brandonendall/PythonUltra`, branch `cg50-new-display`.
+Original project: `OffCamera-Civilman/PythonExtra-CG50`; preserve its history and contributor attribution.
 Reconciled on 2026-09-07 against source, build patches, tests, commit history through `7c88b79` (run #129), and user hardware reports. This file is the canonical task list; update it with every feature/fix handoff. Never infer hardware success from a green compiler run or from a Catalog entry alone.
 
 ## Status rules
@@ -10,7 +11,19 @@ Reconciled on 2026-09-07 against source, build patches, tests, commit history th
 - **Active fix**: code exists but hardware reports show a defect. A local or CI pass does not close it.
 - **Remaining**: not integrated, or only part of the requested functionality exists.
 
-## Current correction release
+## Current integration candidate
+
+The attached **run130.1** is the working baseline: the user reports Brandon
+built it on another server and personally checked that it works. It is kept
+unchanged in `releases/reference/` with its checksum and provenance in
+[the integration handoff](docs/handoffs/run130-1-integration.md).
+
+The new source candidate retains the red default and fixes the information
+panel fill/border argument order, uses the supplied icon, and adds real RTC
+Date/Time settings plus consistent time APIs. Host tests pass; a new G3A build
+and physical testing of the new clock remain separate acceptance gates.
+
+## Earlier CI correction release
 
 Candidate **run #130** passed GitHub Actions on 2026-09-07, commit
 `c6b74e611d62abd3041f604d835a253230ccb027`.
@@ -29,7 +42,7 @@ interpreter. **Hardware confirmation of these corrections remains open.**
 | Standard ZIP create/extract | Candidate fixed; verify hardware | User reported `ValueError('truncated ZIP')`. The no-op native seek/tell implementation is replaced; tests cover files, nested folders, CRC, failed-output cleanup and preservation of existing destinations. Old malformed archives may need recreating from their originals. |
 | RC-controlled startup | Candidate fixed; verify hardware | The unconditional Files launcher is removed. Missing setting -> Files; `set startup=files` -> Files; `set startup=terminal` -> Terminal. |
 | Catalog insertion into terminal/editor | Active fix | F3 discarded the selection; editor inserted only an unqualified member. Insert e.g. `numpy.array` at the cursor, preserve existing input, cancel without insertion, and never execute automatically. Verify EXE/numbered choices on hardware. |
-| Configurable menu border color | Implemented in correction candidate; verify | `set menu_border=cyan`, `#RRGGBB` or RGB565 `0x07ff` in RC; missing/invalid setting defaults to current cyan. Test reload, Catalog/Files dialogs and editor popup borders. |
+| Configurable menu border color | Implemented in correction candidate; verify | `set menu_border=red`, `#RRGGBB` or RGB565 `0xf800` in RC; missing/invalid setting defaults to red. Existing cyan settings remain cyan. Test reload, Catalog/Files dialogs and editor popup borders. |
 | File information Modified field | Active fix | User photo shows an implausible integer. Initialize native stat fields, display a valid stored date/time or Unavailable, and complete the clock/timestamp work below. |
 | Filesystem reset regressions | Active fix / verify | World-switch corrections exist (`aa09418`, `c447fca`, `d38dcac`). Retest ls/listdir, mkdir, rename/move, remove/rmdir, stat and ZIP on both revisions. |
 | Numbered deliverables | Implemented | Run #130 uploads `PythonUltra-CG50-run130.g3a` with a checksum and source commit; continue this naming for future runs. |
@@ -67,9 +80,10 @@ interpreter. **Hardware confirmation of these corrections remains open.**
 
 ### Adjustable clock, date and truthful file timestamps
 
-- [ ] Provide an on-calculator date/time display and controls to set year, month, day, hour, minute and second (user clock-screen reference).
-- [ ] Validate date ranges, leap years and rollovers; read back the clock and verify persistence after leaving/restarting the add-in.
-- [ ] Make wall-clock time APIs reflect the date and time; current `modtime.c` uses `rtc_ticks()/128` (seconds since midnight), not an epoch date/time. Audit `monotonic` units separately and keep elapsed game timing independent of manual clock changes.
+- [x] Implemented candidate: Info -> F2 Date/Time and terminal `clock`; edit all six fields, Save/Cancel, native validation and hardware readback. Not yet hardware-verified.
+- [x] Host-validated calendar range 1970–2099, leap years, rollovers, and simulated readback; writes use the hardware RTC with no stale startup restore.
+- [ ] Hardware-verify readback, actual rollover and persistence after leaving/restarting the add-in, on both calculator revisions.
+- [x] Implemented candidate: Unix-epoch `time`/`time_ns`, `localtime`/`gmtime`/`mktime`, and `set_datetime`; unsigned 32-bit seconds support dates after 2038. `monotonic()` now returns seconds; elapsed ticks/game clocks now use a separate 1 ms TMU counter because fxlibc `clock()` also used the RTC. Hardware timing verification remains open. See the handoff for precision, range and timezone limits.
 - [ ] Connect file creation/save/modification to the real supported timestamp backend. Verify whether the calculator OS stores mtime before promising native timestamps; document any PythonUltra-managed fallback explicitly.
 - [ ] Show Modified as a readable date and time, not raw integers. Show Unavailable for absent/invalid metadata; never stamp old files with the current time as if that were their original modification date.
 - [ ] Test save -> inspect Modified -> restart -> inspect again, on both calculator revisions. Reformatting an invalid value does not satisfy this requirement.
@@ -107,5 +121,5 @@ interpreter. **Hardware confirmation of these corrections remains open.**
 - Keep PythonUltra under the 2 MB build target and respect actual calculator heap limits (current Pygame BMP loader is deliberately capped at 56x56).
 - Retest older/newer fx-CG50 OS/display revisions after native I/O/display/input changes.
 - Record commit, Actions run, byte size/checksum, delivered filename and exact hardware result for each handoff.
-- Repository owner: `OffCamera-Civilman`; co-collaborator: Brandon Endall (`@brandonendall`). Preserve upstream/community attribution.
+- Integration repository owner: `brandonendall`; original project owner: `OffCamera-Civilman`. Preserve Brandon and OffCamera-Civilman co-collaboration and upstream/community attribution.
 - Utilities v2.1 and Geometry/Casio menus are functionality/UX references. Do not copy incompatible third-party source without a project licensing decision.

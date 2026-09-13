@@ -97,6 +97,7 @@ extern const struct _mp_print_t mp_debug_print;
 #define MICROPY_PY_TIME                   (1)
 #define MICROPY_PY_TIME_TIME_TIME_NS      (1)
 #define MICROPY_PY_TIME_INCLUDEFILE       "ports/sh/modtime.c"
+#define MICROPY_EPOCH_IS_1970              (1)
 // TODO: Enable the os module:
 // #define MICROPY_PY_UOS                    (1)
 // TODO: Enable other modules

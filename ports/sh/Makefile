@@ -22,6 +22,7 @@ SRC_C = \
     ports/sh/main.c \
     ports/sh/console.c \
     ports/sh/debug.c \
+    ports/sh/elapsed.c \
     ports/sh/fdfile.c \
     ports/sh/keymap.c \
     ports/sh/libc_compat.c \
@@ -33,6 +34,7 @@ SRC_C = \
     ports/sh/modnumpy.c \
     ports/sh/modos.c \
     ports/sh/mphalport.c \
+    ports/sh/wallclock.c \
     ports/sh/objgintimage.c \
     ports/sh/objgintfont.c \
     ports/sh/pyexec.c \

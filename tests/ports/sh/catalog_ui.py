@@ -33,13 +33,14 @@ class FakeGint(types.ModuleType):
     def __init__(self):
         super().__init__("gint")
         names = ("EXIT", "LEFT", "EXE", "RIGHT", "UP", "DOWN", "ADD", "SUB",
-                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "F2")
         for index, name in enumerate(names):
             setattr(self, "KEY_" + name, index + 1)
         self.KEYEV_DOWN, self.KEYEV_HOLD = 1, 2
         self.keys = []
         self.text = []
         self.frames = []
+        self.rects = []
         self.font = "large"
         self.drains = 0
     def dfont_builtin(self, name):
@@ -52,7 +53,7 @@ class FakeGint(types.ModuleType):
         assert self.font == "small"
         self.text.append((x, y, color, text))
     def drect(self, *args):
-        pass
+        self.rects.append(args)
     def drect_border(self, *args):
         self.frames.append(args)
     def dupdate(self):
@@ -84,8 +85,14 @@ g.frames.clear()
 g.text.clear()
 g.keys = [g.KEY_DOWN, g.KEY_EXE]
 assert ui.information_panel("PythonUltra Info", tuple("line" + str(i) for i in range(16)), True) is None
-assert g.frames[0][4] == 0xF800
+assert g.frames[0][4:] == (0, 2, 0xF800)
+assert (0, 0, 395, 223, 0) in g.rects
 assert any(text == "line10" for _, _, _, text in g.text)
+
+# The clock entry is available from Info, including light mode.
+g.keys = [g.KEY_F2]
+assert ui.information_panel("Info", ("clock",), False, clock=True) == "clock"
+assert (0, 0, 395, 223, 0xFFFF) in g.rects
 
 # This test runs after the build patches. The F3 path must insert into the
 # existing edit line, without clearing it or evaluating the selected name.

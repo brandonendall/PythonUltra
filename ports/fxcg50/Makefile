@@ -26,6 +26,7 @@ ifneq ($(PYTHONULTRA_RUNTIME_PREPARED),1)
 endif
 	python3 -m py_compile \
 		../sh/modules/pythonultra/__init__.py \
+		../sh/modules/pythonultra/clock.py \
 		../sh/modules/pyeditor/__init__.py \
 		../sh/modules/pyfiles/__init__.py \
 		../sh/modules/pyperm/__init__.py \
@@ -39,6 +40,8 @@ endif
 	python3 ../../tests/ports/sh/zipfile_roundtrip.py
 	python3 ../../tests/ports/sh/pyterm_startup.py
 	python3 ../../tests/ports/sh/fdfile_seek.py
+	python3 ../../tests/ports/sh/wallclock_native.py
+	python3 ../../tests/ports/sh/clock_ui.py
 	python3 ../../tests/ports/sh/catalog_ui.py
 	python3 ../../tests/ports/sh/file_info_timestamp.py
 	python3 ../../tests/ports/sh/pythonultra_features.py
@@ -51,8 +54,8 @@ all: PythonUltra.g3a
 ICONS_RELEASE := --icon-uns=icon-uns.png --icon-sel=icon-sel.png
 ICONS_DEV := --icon-uns=icon-uns-dev.png --icon-sel=icon-sel-dev.png
 
-PythonUltra.g3a: $(BUILD)/firmware.bin
-	python3 blacken_icon.py
+PythonUltra.g3a: $(BUILD)/firmware.bin ../../logo/pythonultra-icon-92x64.png prepare_icon.py
+	python3 prepare_icon.py
 	fxgxa --g3a -n PythonUltra $(ICONS_$(BUILDTYPE)) $< -o $@
 
 send: all

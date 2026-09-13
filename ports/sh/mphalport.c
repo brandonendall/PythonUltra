@@ -6,9 +6,30 @@
 
 #include "py/mphal.h"
 #include "console.h"
+#include "py/runtime.h"
+#include "wallclock.h"
+#include "elapsed.h"
+#include "py/mperrno.h"
 #include <gint/display.h>
 #include <gint/keyboard.h>
 #include <unistd.h>
+
+uint64_t pe_monotonic_ms(void)
+{
+    uint64_t milliseconds;
+    if(!pe_elapsed_read(&milliseconds))
+        mp_raise_OSError(MP_EBUSY);
+    return milliseconds;
+}
+
+uint64_t mp_hal_time_ns(void)
+{
+    uint32_t seconds;
+    if(!pe_clock_read(&seconds))
+        mp_raise_ValueError(MP_ERROR_TEXT("RTC date invalid; set Date/Time"));
+    /* Same epoch as time(); resolution is one second, despite the unit. */
+    return (uint64_t)seconds * 1000000000ULL;
+}
 
 int mp_hal_stdin_rx_chr(void)
 {

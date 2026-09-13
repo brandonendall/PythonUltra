@@ -601,3 +601,30 @@ PROJECT NOTE
 PythonUltra intentionally prioritizes practical calculator programming,
 2D/3D game development, usable filesystem tools and an onboard programming
 workflow over strict feature-for-feature desktop Python compatibility.
+
+
+DATE AND TIME (integration candidate; hardware verification pending)
+-----------------------------------------------------------------
+Open Info (F6), then F2 Date/Time, or type clock in the terminal.
+UP/DOWN or EXE selects a field. Type digits or use +/-. F1 saves to the
+calculator hardware clock; EXIT cancels. The clock continues independently
+of the add-in; no saved startup date is reapplied. Verify persistence on your
+calculator before treating this new feature as hardware-confirmed.
+
+Python API:
+  import time
+  time.set_datetime((2026, 9, 11, 14, 30, 0))
+  time.localtime()        # year, month, day, hour, minute, second, weekday, yearday
+  time.time()             # integer Unix-epoch seconds
+  time.time_ns()          # same clock, nanosecond units, one-second resolution
+  time.mktime(time.localtime())
+  time.monotonic()        # elapsed seconds; independent of edits to the RTC
+
+Supported dates: 1970 through 2099. Invalid dates are rejected, including
+invalid leap days. mktime takes an 8/9-field tuple and rejects out-of-range
+values rather than normalizing them. localtime/gmtime accept integer seconds;
+there is no timezone/DST database or automatic UTC synchronization.
+Missing filesystem modification timestamps continue to show Unavailable.
+Elapsed timing uses one separate hardware timer at 1 ms resolution while
+the add-in is active. ticks_us uses microsecond units with 1 ms resolution;
+suspended time outside the add-in is not guaranteed to be counted.

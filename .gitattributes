@@ -26,3 +26,6 @@ ports/cc3200/hal/des.c -text
 ports/cc3200/hal/i2s.c -text
 ports/cc3200/hal/i2s.h -text
 ports/cc3200/version.h -text
+
+# Preserve calculator add-ins byte-for-byte; never normalize line endings.
+*.g3a binary

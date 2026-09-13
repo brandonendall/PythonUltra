@@ -1,0 +1,148 @@
+Yes. And the screenshots help a lot.
+What I think is going on:
+The white background in dark mode is real and ugly
+That “About / Utilities” style screen is not using the same dark container styling as the rest of PythonUltra.
+It looks like one of the info/about views is still rendering with a light/white page background or a hardcoded light theme path, while the rest of the UI is dark.
+You like the scrollable information-screen layout
+Makes sense. The second screenshot is cleaner structurally:
+framed content area
+consistent header/body feel
+scrollable info
+obvious separation from the softkey row
+That’s a better model for About / Info / help-style screens than a white slab.
+Real date/time is a bigger feature, not just a one-line fix
+Right now the repo notes already point to the real problem: the current time behavior is not a true wall clock with a real date backend.
+So if you want a real settable date/time, that should be treated as a proper feature tranche:
+clock UI
+persistence
+validation
+API behavior
+file timestamp integration
+My recommendation
+Do this in two chunks, in this order:
+Chunk 1: UI cleanup and consistency
+Fix the ugly/obvious stuff first.
+Goals:
+remove white background from dark mode info/about screens
+make info/about/help screens use the same framed dark UI language
+use the same accent border system as the menu border feature
+make the accent default red instead of cyan
+keep scrollable info pages
+What I would change:
+use the same accent/border source everywhere:
+pythonultra.menu_border()
+make dark info/about screens render:
+black or near-black page background
+framed panel
+red accent border
+readable white/light text
+reuse the scrollable information layout for:
+About
+Info
+maybe module/help pages later
+In plain English: make the information screens look like part of PythonUltra instead of some other app crashing into the room drunk.
+Chunk 2: Real clock/date
+Then do the real feature properly.
+Goals:
+add a Date/Time settings screen
+allow setting:
+year
+month
+day
+hour
+minute
+second
+validate ranges and leap years
+persist after restart
+expose truthful time to PythonUltra
+later connect file timestamps to that system where possible
+This should probably include:
+a menu item in Info or Settings
+a stored config file or persistent values
+a clean distinction between:
+wall clock
+monotonic timer / elapsed timing
+That distinction matters because:
+games or frame timing should not break if the user changes the clock
+pygame.time.Clock and similar timing behavior should stay based on elapsed time, not fake wall time
+Best practical order
+If this were my repo, I’d do it like this:
+run 130.1
+set default menu_border to red
+remove white dark-mode background
+make info/about screens use dark framed scrollable layout
+keep existing startup/icon stuff
+run 131
+add settable date/time UI
+persistence
+basic readable display in Info
+expose date/time cleanly to Python side
+run 131.x / 132
+integrate file Modified display with truthful date/time behavior
+verify restarts
+test old/new calculator revisions
+What I’d tell Codex
+Here’s a codex-ready handoff you can paste in:
+Task: PythonUltra CG50 UI consistency + real clock/date planning
+Repository: OffCamera-Civilman/PythonExtra-CG50
+Branch: cg50-new-display
+Start by reading:
+issue #2
+latest cg50-new-display head
+PYTHONULTRA_ROADMAP.md
+Part A — UI consistency fix for next correction build
+User hardware screenshots show that at least one info/about screen still uses a white background in dark mode, which looks wrong compared with the rest of PythonUltra.
+Implement a correction release candidate with these goals:
+Keep the current PythonUltra dark-mode visual language.
+Remove white/light page backgrounds from dark-mode info/about/help-style screens.
+Rework the About/Info presentation to use the same kind of framed scrollable panel the user likes from the screenshot.
+Reuse the existing accent/border system driven by pythonultra.menu_border().
+Change the default menu-border accent from cyan to red so the UI matches the red cyber-snake branding/icon direction.
+Ensure the framed scrollable dark layout is used consistently where appropriate:
+About
+Info
+other informational popups/pages if they currently diverge visually
+Acceptance goals:
+No white background in dark mode on info/about screens.
+Scrollable information remains usable.
+Border/accent color follows configured menu-border color.
+Missing/invalid menu-border setting defaults to red instead of cyan.
+Do not regress existing Files/Catalog/editor popup border behavior.
+Part B — prepare real date/time feature tranche
+The user wants a real settable date and time built in.
+Implement or scaffold this as a proper feature, not a fake cosmetic display.
+Requirements:
+Add a calculator-side UI to set:
+year
+month
+day
+hour
+minute
+second
+Validate date ranges, leap years, and rollover.
+Persist the chosen date/time across restart.
+Provide a readable date/time display in UI.
+Keep elapsed/monotonic timing separate from wall clock.
+Do not break pygame/game timing by tying it to manually edited wall clock time.
+Update the roadmap/status notes honestly:
+what is implemented
+what is verified only in CI
+what still needs hardware confirmation
+Stretch goal if feasible in same tranche:
+make file “Modified” display use truthful readable date/time when supported
+otherwise show “Unavailable” honestly
+Release discipline
+If Part A is completed first, produce a correction build in the style of run 130.1 / next numbered run.
+Keep numbered artifact naming.
+Record:
+commit SHA
+run number
+what changed
+what still needs hardware testing
+Do not overwrite existing working features from older chat memory. Compare against current branch head before edits.
+My blunt recommendation
+Do not try to jam the clock/date feature into the same quick cosmetic fix unless you really want to create a gremlin nest.
+The smart move is:
+130.1 = UI cleanup + red accent + dark info/about screens
+next run = real date/time
+If you want, I can turn this into an even tighter copy-paste instruction specifically optimized for Codex, or help you break Part A into exact files/functions to touch based on the current repo structure.

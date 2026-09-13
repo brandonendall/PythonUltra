@@ -27,21 +27,19 @@ static inline void mp_hal_delay_us(mp_uint_t us)
 }
 
 /* Time spent executing. */
+uint64_t pe_monotonic_ms(void);
 static inline mp_uint_t mp_hal_ticks_ms(void)
 {
-    return ((uint64_t)clock() * 1000) / CLOCKS_PER_SEC;
+    return pe_monotonic_ms();
 }
 static inline mp_uint_t mp_hal_ticks_us(void)
 {
-    return ((uint64_t)clock() * 1000000) / CLOCKS_PER_SEC;
+    return pe_monotonic_ms() * 1000;
 }
 static inline mp_uint_t mp_hal_ticks_cpu(void)
 {
-    return clock();
+    return pe_monotonic_ms();
 }
 
 /* Time since Epoch in nanoseconds. */
-static inline uint64_t mp_hal_time_ns(void)
-{
-    return (uint64_t)time(NULL) * 1000000000;
-}
+uint64_t mp_hal_time_ns(void);

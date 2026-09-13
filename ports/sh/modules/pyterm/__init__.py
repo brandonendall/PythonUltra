@@ -30,7 +30,7 @@ HISTORY_KEEP_LINES = 64
 _COMMANDS = (
     "help", "man", "ls", "cd", "pwd", "mkdir", "touch", "rm", "rmdir",
     "mv", "cp", "cat", "echo", "clear", "chmod", "python", "zip", "unzip",
-    "edit", "files", "modules", "info", "version", "alias", "unalias",
+    "edit", "files", "modules", "info", "clock", "version", "alias", "unalias",
     "source", "history", "font", "theme", "rc",
 )
 
@@ -149,6 +149,8 @@ _MAN = {
     ),
     "modules": ("NAME: modules - open PythonUltra module catalog", "SYNOPSIS: modules"),
     "info": ("NAME: info - show build/collaboration information", "SYNOPSIS: info"),
+    "clock": ("NAME: clock - view/set calculator date and time",
+              "SYNOPSIS: clock", "F1 saves to the hardware RTC; EXIT cancels"),
     "version": ("NAME: version - show PythonUltra/MicroPython version", "SYNOPSIS: version"),
     "alias": (
         "NAME: alias - create or list terminal aliases",
@@ -664,6 +666,9 @@ def dispatch(line):
     if lower == "info":
         import pythonultra
         pythonultra.info_ui(_SETTINGS["theme"] == "dark"); return 0
+    if lower == "clock":
+        from pythonultra.clock import show
+        show(_SETTINGS["theme"] == "dark"); return 0
     if lower == "version":
         try:
             import pythonultra
