@@ -58,9 +58,7 @@ jobs:
           import shutil
 
           # Exact pixels recovered from the user's supplied run130.1 binary.
-          source = Path("logo/**"
-      - "Makefile"
-      - "UPSTREAM_COMMIT")
+          source = Path("logo/run130-1-icon.png")
           out_dir = Path("ports/fxcg50")
           size = (92, 64)
 
