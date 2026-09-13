@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 def run(*args):
+    """Run a preparation or build command at the repository root, failing on error."""
     subprocess.run(args, cwd=ROOT, check=True)
 
 
@@ -17,10 +18,20 @@ args = parser.parse_args()
 if not args.prepared:
     for script in ('apply_runtime_fixes', 'apply_pythonultra_features',
                    'apply_pythonultra_ui2', 'apply_pythonultra_permissions',
-                   'apply_pythonultra_ui3_compat', 'apply_pythonultra_symbols'):
+                   'apply_pythonultra_ui3_compat', 'apply_pythonultra_symbols',
+                   'apply_pythonultra_symbol_safety', 'apply_pythonultra_editor_nav',
+                   'apply_pythonultra_editor_nav_docs', 'apply_pythonultra_ui4',
+                   'apply_pythonultra_info_menu', 'apply_pythonultra_cfiles',
+                   'apply_pythonultra_execution_docs'):
         run(sys.executable, 'ports/sh/' + script + '.py')
     run(sys.executable, 'tools/pythonultra_docs.py', '--output',
         'build-module-docs/reference', '--runtime-header', 'ports/sh/module_docs.h')
+reference = (ROOT / 'build-module-docs/reference/picoc.txt').read_text()
+header = (ROOT / 'ports/sh/module_docs.h').read_text()
+for signature in ('run(source, call_main=False)', 'run_file(path, call_main=True)', 'version()'):
+    assert signature in reference, 'Missing PicoC reference: ' + signature
+    assert signature in header, 'Missing PicoC runtime help: ' + signature
+assert 'MP_QSTR_picoc' in header
 build = ROOT / 'build-docs-host'
 run('make', '-C', 'ports/unix', '-j2', 'VARIANT=doc_variant',
     'VARIANT_DIR=' + str(ROOT / 'tests/ports/sh/doc_variant'), 'BUILD=' + str(build))

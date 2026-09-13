@@ -30,7 +30,8 @@ OVERVIEWS = {
 'py3d': 'Compact software 3D engine. Camera looks along +Z; matrices are row-major 4 x 4 tuples. Painter sorting, back-face culling, optional lighting and native filled triangles. No depth buffer or near-plane triangle clipping; triangles crossing the near plane are skipped.',
 'pythonultra': 'On-calculator Catalog, modal menus, theme/border and build information. Catalog entries are insertion aids; they are not a complete implementation inventory.',
 'pyeditor': 'Calculator text editor: safe New/Open/Save, Find, Run, selection and multiline paste. File limit 65,536 bytes / 2,048 lines. F6 Sym opens symbols; SHIFT+VARS opens Style. In alpha mode SHIFT reverses case for the next character; the a/A indicator reflects it. Repeated arrows/delete are coalesced and released keys stop repeating. Dark canvases and bars are black. Hardware confirmation of these corrections is pending. API methods below are available for customization; typical programs only use open_file or new_file.',
-'pyfiles': 'Calculator file browser, previews, editor launcher, clipboard, permissions and ZIP actions. Typical entry point: browse(). The current text viewer clips long lines; this is an active fix.',
+'pyfiles': 'Calculator file browser with wrapped text previews, editor, clipboard, permissions and ZIP actions. Select a .c file and press EXE to execute its main() through PicoC; output and the C exit code remain in the terminal. Python files run through the Run action. browse() returns None after closing the browser.',
+'picoc': 'Embedded C interpreter for the fx-CG50. run() executes source text; run_file() reads a C file and calls main() by default. Returns a C exit code (zero usually means success); interpreter diagnostics are printed to the terminal. File access may raise OSError and interpreter allocation may raise MemoryError. Supports the bundled C library subset, not C++ or POSIX unistd. Each call creates and cleans up a separate interpreter with a 24 KiB internal stack arena.',
 'pyperm': 'PythonUltra-managed virtual rwx permissions. These checks apply to cooperating PythonUltra tools, not native OS-wide file protection. Permission database changes can affect editing and file operations.',
 'pyterm': 'Small Linux-like command layer with aliases, history and an RC file. dispatch() is the native shell bridge, not a general subprocess API. startup_view() honors RC startup=terminal/files, default files.',
 'zipfile': 'Standard stored/DEFLATE ZIP files with CRC checking and cleanup of failed extraction. No ZIP64, encryption, multidisk or desktop ZipFile class. Existing archive/destination files are preserved rather than overwritten. Large-file compression responsiveness is an active fix.',
@@ -67,6 +68,7 @@ EXAMPLES = {
 'pythonultra': 'import pythonultra\nprint(pythonultra.modules())\npythonultra.catalog("numpy")\nprint(pythonultra.catalog_text("numpy", "array"))',
 'pyeditor': 'import pyeditor\n# Opens a new unsaved buffer with an unused filename.\npyeditor.new_file("demo.py")',
 'pyfiles': 'import pyfiles\npyfiles.browse("/")',
+'picoc': 'import picoc\nprint(picoc.version())\n# Replace /hello.c with your C file containing main().\nstatus = picoc.run_file("/hello.c")\nprint("C exit code:", status)',
 'pyperm': 'import pyperm\n# Replace demo.py with your file.\nprint(pyperm.get_mode("demo.py"))\nprint(pyperm.readable("demo.py"))',
 'pyterm': 'import pyterm\nprint(pyterm.commands())\npyterm.man("python")\nprint(pyterm.startup_view())',
 'zipfile': 'import zipfile\n# demo.py must exist; demo.zip and output/demo.py must not exist.\narchive = zipfile.compress("demo.py", "demo.zip")\nprint(zipfile.namelist(archive))\nzipfile.extract(archive, "output")',
@@ -179,7 +181,9 @@ DESCRIPTIONS = {
 'pythonultra.info_ui': 'Display the build/about information menu.',
 'pyeditor.Editor': 'Create an editor buffer and attempt to load filename. Call run() to enter the interactive editor.',
 'pyfiles.Browser': 'Create a file-browser controller for the requested directory and theme; call run() for the UI.',
-'pyfiles.browse': 'Launch the file browser and restore display/font state when it returns.',
+'pyfiles.browse': 'Launch Files at folder using the selected theme. Select a .c file and press EXE to run it; Python files use Run. Return None, keeping internal navigation markers out of terminal output.',
+'pyfiles.Browser.run_file': 'Run a .py file as __main__ or a .c file through picoc.run_file(path), after the managed read-permission check. C execution prints its exit code. Return the internal terminal handoff marker after execution or a reported error; unsupported selections stay in Files. Restore sys.path and collect garbage.',
+'pyfiles.Browser.enter_selected': 'Enter the highlighted directory, execute a selected .c file, or show file information for other files. Return the terminal handoff marker when C execution finishes.',
 'pyterm.commands': 'Return the supported terminal command names.',
 'pyterm.man': 'Print usage and description for a terminal command.',
 'pyterm.source': 'Read and execute commands from an RC/script file using the terminal command parser.',
@@ -341,7 +345,7 @@ DESCRIPTIONS.update({
 'text_viewer':'Open a read-only text preview. Current long-line clipping is tracked as a hardware usability defect.',
 'checksum_ui':'Compute and display the selected file digest.', 'file_info':'Display file metadata and related actions.',
 'enter_selected':'Enter a directory or invoke the selected file action.',
-'run_file':'Run a Python source file with permission checks.', 'edit_file':'Open the selected text file in the editor.',
+'run_file':'Run the selected source file with permission checks; see the owning class for language and return behavior.', 'edit_file':'Open the selected text file in the editor.',
 'open_editor':'Launch the editor through the browser handoff.', 'create_new':'Prompt for a new file/folder name and create it.',
 'rename_selected':'Prompt for a new name and rename the selected entry.',
 'delete_selected':'Confirm and delete selected targets.',
@@ -357,6 +361,12 @@ NATIVE = {}
 def native(module, rows):
     for signature, detail in rows:
         NATIVE[module + '.' + signature.split('(')[0]] = (signature, detail)
+
+native('picoc', [
+('run(source, call_main=False)', 'Interpret a C source string in a fresh interpreter. Top-level statements run during parsing. Pass True as the second positional argument to call main() after parsing. Return the C exit code; diagnostics print to the terminal. Example: picoc.run("int main(void) { return 12; }", True).'),
+('run_file(path, call_main=True)', 'Read and interpret the C file at path, resolving relative paths from the current directory. Call main() by default; pass False as the second positional argument for script-style C without main(). Return the C exit code. File errors raise OSError; allocation can raise MemoryError; C diagnostics print to the terminal. Example: picoc.run_file("/hello.c"). Files uses this function after its managed read-permission check.'),
+('version()', 'Return the version string of the pinned PicoC interpreter as a Python string. Example: print(picoc.version()).'),
+])
 
 native('builtins', [
 ('abs(x)', 'Return the absolute value of a number.'),

@@ -7,6 +7,11 @@ sys.path.insert(0, root + '/ports/sh/modules')
 from py3d import vec3
 import py3d
 import math
+import pyfiles
+assert 'PicoC' in pyfiles.__doc__
+assert '.c' in pyfiles.Browser.run_file.__doc__
+assert 'None' in pyfiles.browse.__doc__
+help(pyfiles.Browser.run_file)
 assert vec3(1, 2, 3) == (1.0, 2.0, 3.0)
 assert 'vec3(x=0.0, y=0.0, z=0.0)' in vec3.__doc__
 assert 'tuple' in vec3.__doc__

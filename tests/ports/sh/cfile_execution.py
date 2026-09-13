@@ -35,6 +35,7 @@ with tempfile.TemporaryDirectory() as folder:
     browser.selected_entry = lambda: ("notes.txt", False)
     assert browser.enter_selected() == "info"
     def denied(path):
+        """Simulate the managed read-permission refusal before C execution."""
         raise PermissionError("read denied")
     pyfiles.pyperm.require_read = denied
     with contextlib.redirect_stdout(io.StringIO()) as output:
@@ -46,4 +47,14 @@ with tempfile.TemporaryDirectory() as folder:
         assert browser.run_file(str(source)) == "terminal"
     assert "C exit code: 3" in output.getvalue()
     assert browser.msg == "C error"
+assert "PicoC" in pyfiles.browse.__doc__
+assert ".c" in cls.run_file.__doc__
+original_browser = pyfiles.Browser
+try:
+    pyfiles.Browser = lambda *args: types.SimpleNamespace(run=lambda: "terminal")
+    with contextlib.redirect_stdout(io.StringIO()) as output:
+        assert pyfiles.browse() is None
+    assert output.getvalue() == ""
+finally:
+    pyfiles.Browser = original_browser
 print("C-file selection, permissions, and terminal handoff: PASS")
